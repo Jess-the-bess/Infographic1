@@ -10,12 +10,12 @@ import {SCENE_COPY} from '../copy';
 import {COLORS, PLANE_TARGET_BOX, clampedInterpolate} from '../theme';
 
 /**
- * Scene 1 (0–4s | Frames 0–119): First contact.
- * - A subtly angled 3D SaaS enquiry card enters; cursor clicks Send.
- * - A sculpted, curved pure-white paper airplane with layered fold drop shadows
- *   lifts off along a smooth arc while the 3D camera pans gracefully with it.
- * - Final 0.5s (f 102..119): Plane arrives at PLANE_TARGET_BOX (1410, 520) and
- *   transforms cleanly into the rounded Blue (#39A6DE) box opening Scene 2.
+ * Scene 1 (0–4s | Frames 0–119) — Tablet/Mobile Portrait Hero (1080x1440).
+ * - Top: Plus Jakarta Sans copy anchored cleanly above y=420.
+ * - Bottom stage: 3D-tilted SaaS enquiry card; cursor clicks Send.
+ * - Curved pure-white paper airplane with layered drop shadows lifts off along
+ *   P0=(295,1002), P1=(680,620), P2=(1040,640) while camera pans smoothly
+ *   so the plane arrives at PLANE_TARGET_BOX (540, 870) and morphs into Scene 2's box.
  */
 export const Scene1Enquiry: React.FC = () => {
   const frame = useCurrentFrame();
@@ -23,10 +23,10 @@ export const Scene1Enquiry: React.FC = () => {
 
   const cardIn = clampedInterpolate(frame, [0, 18], [0, 1], expOut);
 
-  // Cursor glides onto the Send Enquiry button (1145, 624) and clicks at f 16..24
+  // Cursor glides onto Send button (295, 1002) and clicks at f 16..24
   const cursorMove = clampedInterpolate(frame, [4, 17], [0, 1], expOut);
-  const cursorX = 1290 + (1145 - 1290) * cursorMove;
-  const cursorY = 740 + (624 - 740) * cursorMove;
+  const cursorX = 435 + (295 - 435) * cursorMove;
+  const cursorY = 1130 + (1002 - 1130) * cursorMove;
   const cursorClickRipple = clampedInterpolate(
     frame,
     [17, 29],
@@ -43,7 +43,7 @@ export const Scene1Enquiry: React.FC = () => {
     clampedInterpolate(frame, [3, 9], [0, 1]) *
     (1 - clampedInterpolate(frame, [26, 36], [0, 1]));
 
-  // Main flight + camera pan progress (f 22..102)
+  // Flight + screen pan (f 22..102)
   const flightT = clampedInterpolate(
     frame,
     [22, 102],
@@ -51,23 +51,24 @@ export const Scene1Enquiry: React.FC = () => {
     Easing.inOut(Easing.cubic)
   );
 
-  // Exact quadratic Bezier P0=(1140,620), P1=(1560,290), P2=(2060,260)
+  // Quadratic Bezier P0=(295,1002), P1=(680,620), P2=(1040,640)
   const oneMinusT = 1 - flightT;
   const planeWorldX =
-    oneMinusT * oneMinusT * 1140 +
-    2 * oneMinusT * flightT * 1560 +
-    flightT * flightT * 2060;
+    oneMinusT * oneMinusT * 295 +
+    2 * oneMinusT * flightT * 680 +
+    flightT * flightT * 1040;
   const planeWorldY =
-    oneMinusT * oneMinusT * 620 +
-    2 * oneMinusT * flightT * 290 +
-    flightT * flightT * 260;
+    oneMinusT * oneMinusT * 1002 +
+    2 * oneMinusT * flightT * 620 +
+    flightT * flightT * 640;
 
-  const dx = 2 * oneMinusT * (1560 - 1140) + 2 * flightT * (2060 - 1560);
-  const dy = 2 * oneMinusT * (290 - 620) + 2 * flightT * (260 - 290);
+  const dx = 2 * oneMinusT * (680 - 295) + 2 * flightT * (1040 - 680);
+  const dy = 2 * oneMinusT * (620 - 1002) + 2 * flightT * (640 - 620);
   const tangentAngleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
 
-  const camPanX = -flightT * 650;
-  const camPanY = flightT * 260;
+  // Screen pan tracks plane smoothly so flightT=1 lands at (540, 870)
+  const camPanX = -flightT * 500;
+  const camPanY = flightT * 230;
 
   const screenX = planeWorldX + camPanX;
   const screenY = planeWorldY + camPanY;
@@ -75,12 +76,11 @@ export const Scene1Enquiry: React.FC = () => {
   const levelOut = clampedInterpolate(frame, [94, 110], [0, 1], expOut);
   const planeRotation = tangentAngleDeg * (1 - levelOut);
 
-  // Noticeable yet smooth 3D angle across the right-hand animation, settling at (-8, +4) for Scene 2
-  const stageRotateY = -11 + flightT * 3 + Math.sin(flightT * Math.PI) * 3.5;
-  const stageRotateX = 5.5 - flightT * 1.5 - Math.sin(flightT * Math.PI) * 1.5;
+  // Subtle smooth 3D angle settling at (-7, +3.5) for Scene 2 handoff
+  const stageRotateY = -10 + flightT * 3 + Math.sin(flightT * Math.PI) * 3;
+  const stageRotateX = 5 - flightT * 1.5 - Math.sin(flightT * Math.PI) * 1.5;
   const stageScale = 0.96 + cardIn * 0.04 + Math.sin(flightT * Math.PI) * 0.025;
 
-  // Final 0.5s morph: Curved white plane -> Rounded Blue Box at PLANE_TARGET_BOX
   const morphT = clampedInterpolate(
     frame,
     [102, 119],
@@ -92,35 +92,36 @@ export const Scene1Enquiry: React.FC = () => {
   const planePopIn = clampedInterpolate(frame, [19, 26], [0, 1], expOut);
   const planeOpacity =
     planePopIn * (1 - clampedInterpolate(frame, [104, 113], [0, 1]));
-  const planeScale = (0.78 + planePopIn * 0.22) * (1 - morphT * 0.4);
+  const planeScale = (0.8 + planePopIn * 0.2) * (1 - morphT * 0.4);
 
   const boxPop = clampedInterpolate(frame, [104, 118], [0, 1], expOut);
   const boxSize = PLANE_TARGET_BOX.size * (0.45 + boxPop * 0.55);
   const boxRx = PLANE_TARGET_BOX.rx * (1.2 - boxPop * 0.2);
 
-  const trailPath = 'M 1140 620 Q 1560 290 2060 260';
-  const trailLen = 1080;
+  const trailPath = 'M 295 1002 Q 680 620 1040 640';
+  const trailLen = 960;
 
   return (
     <AbsoluteFill style={{backgroundColor: COLORS.bg}}>
-      <AmbientBackdrop cx={1390} cy={510} opacity={1} />
+      <AmbientBackdrop cx={540} cy={880} opacity={1} />
 
       <CameraStage
         rotateX={stageRotateX}
         rotateY={stageRotateY}
         scale={stageScale}
-        origin="1380px 520px"
+        origin="540px 880px"
       >
         <svg
-          width={1920}
-          height={1080}
-          viewBox="0 0 1920 1080"
+          width={1080}
+          height={1440}
+          viewBox="0 0 1080 1440"
           shapeRendering="geometricPrecision"
           style={{display: 'block'}}
         >
           <defs>
-            <clipPath id="flightSkyClip">
-              <rect x={870} y={0} width={1050} height={1080} />
+            {/* Clipped below top hero copy so flying elements never overlap text */}
+            <clipPath id="portraitSkyClip">
+              <rect x={0} y={420} width={1080} height={1020} />
             </clipPath>
             <filter id="cardFloatGlow" x="-22%" y="-22%" width="144%" height="148%">
               <feDropShadow
@@ -171,15 +172,14 @@ export const Scene1Enquiry: React.FC = () => {
             </linearGradient>
           </defs>
 
-          {/* Panning Multi-Depth Sky World Layer */}
-          <g clipPath="url(#flightSkyClip)" opacity={skyFadeOut}>
-            {/* Distant slow parallax layer (0.55x) */}
+          <g clipPath="url(#portraitSkyClip)" opacity={skyFadeOut}>
+            {/* Distant parallax layer (0.55x) */}
             <g transform={`translate(${camPanX * 0.55}, ${camPanY * 0.55})`} opacity={cardIn}>
-              <circle cx={1480} cy={220} r={54} fill={COLORS.blueSoft} opacity={0.75} />
-              <circle cx={1760} cy={420} r={42} fill={COLORS.roseSoft} opacity={0.65} />
+              <circle cx={680} cy={590} r={48} fill={COLORS.blueSoft} opacity={0.75} />
+              <circle cx={960} cy={800} r={38} fill={COLORS.roseSoft} opacity={0.65} />
               <rect
-                x={1620}
-                y={150}
+                x={820}
+                y={520}
                 width={170}
                 height={42}
                 rx={21}
@@ -190,7 +190,7 @@ export const Scene1Enquiry: React.FC = () => {
               />
             </g>
 
-            {/* Primary world plane layer (1.0x) */}
+            {/* Primary world layer (1.0x) */}
             <g transform={`translate(${camPanX}, ${camPanY})`} opacity={cardIn}>
               {/* Sleek SaaS Enquiry Card at Launch Origin */}
               <g
@@ -198,49 +198,42 @@ export const Scene1Enquiry: React.FC = () => {
                 filter="url(#cardFloatGlow)"
               >
                 <rect
-                  x={985}
-                  y={435}
-                  width={310}
-                  height={250}
+                  x={130}
+                  y={800}
+                  width={330}
+                  height={266}
                   rx={24}
                   fill={COLORS.card}
                   stroke={COLORS.cardBorderBlue}
                   strokeWidth={1.8}
                 />
+                <rect x={160} y={830} width={34} height={34} rx={10} fill={COLORS.blueSoft} />
+                <circle cx={177} cy={847} r={6.5} fill={COLORS.blue} />
                 <rect
-                  x={1013}
-                  y={463}
-                  width={32}
-                  height={32}
-                  rx={10}
-                  fill={COLORS.blueSoft}
-                />
-                <circle cx={1029} cy={479} r={6} fill={COLORS.blue} />
-                <rect
-                  x={1057}
-                  y={473}
-                  width={118}
+                  x={206}
+                  y={841}
+                  width={124}
                   height={12}
                   rx={6}
                   fill={COLORS.navy}
                   opacity={0.85}
                 />
 
-                {/* Form fields */}
+                {/* Form inputs */}
                 <rect
-                  x={1013}
-                  y={513}
-                  width={254}
-                  height={34}
+                  x={160}
+                  y={882}
+                  width={270}
+                  height={36}
                   rx={10}
                   fill={COLORS.stage}
                   stroke={COLORS.cardBorder}
                   strokeWidth={1.2}
                 />
                 <rect
-                  x={1027}
-                  y={526}
-                  width={116}
+                  x={176}
+                  y={896}
+                  width={122}
                   height={8}
                   rx={4}
                   fill={COLORS.mutedDark}
@@ -248,19 +241,19 @@ export const Scene1Enquiry: React.FC = () => {
                 />
 
                 <rect
-                  x={1013}
-                  y={557}
-                  width={254}
-                  height={34}
+                  x={160}
+                  y={928}
+                  width={270}
+                  height={36}
                   rx={10}
                   fill={COLORS.stage}
                   stroke={COLORS.cardBorder}
                   strokeWidth={1.2}
                 />
                 <rect
-                  x={1027}
-                  y={570}
-                  width={168}
+                  x={176}
+                  y={942}
+                  width={176}
                   height={8}
                   rx={4}
                   fill={COLORS.mutedDark}
@@ -269,81 +262,80 @@ export const Scene1Enquiry: React.FC = () => {
 
                 {/* Send CTA Pill */}
                 <rect
-                  x={1013}
-                  y={603}
-                  width={254}
-                  height={46}
+                  x={160}
+                  y={978}
+                  width={270}
+                  height={48}
                   rx={14}
                   fill={frame >= 18 ? COLORS.blueDeep : COLORS.blue}
                 />
                 <rect
-                  x={1088}
-                  y={622}
-                  width={76}
+                  x={240}
+                  y={998}
+                  width={80}
                   height={8}
                   rx={4}
                   fill={COLORS.card}
                   opacity={0.92}
                 />
                 <path
-                  d="M 1175 626 C 1181 622, 1187 620, 1192 620 C 1189 625, 1186 630, 1183 633 L 1181 628 Z"
+                  d="M 332 1002 C 338 998, 344 996, 349 996 C 346 1001, 343 1006, 340 1009 L 338 1004 Z"
                   fill={COLORS.card}
                 />
               </g>
 
-              {/* Floating SaaS milestone cards panning past with soft shadows */}
+              {/* Floating SaaS milestone cards panning past */}
               <g filter="url(#cardFloatGlow)">
                 <rect
-                  x={1360}
-                  y={285}
-                  width={186}
-                  height={62}
+                  x={520}
+                  y={640}
+                  width={196}
+                  height={66}
                   rx={18}
                   fill={COLORS.card}
                   stroke={COLORS.cardBorderBlue}
                   strokeWidth={1.5}
                 />
-                <rect x={1378} y={302} width={28} height={28} rx={9} fill={COLORS.blueSoft} />
-                <circle cx={1392} cy={316} r={5.5} fill={COLORS.blue} />
-                <rect x={1418} y={307} width={92} height={9} rx={4.5} fill={COLORS.navy} opacity={0.8} />
-                <rect x={1418} y={322} width={64} height={7} rx={3.5} fill={COLORS.mutedDark} opacity={0.55} />
+                <rect x={540} y={659} width={28} height={28} rx={9} fill={COLORS.blueSoft} />
+                <circle cx={554} cy={673} r={5.5} fill={COLORS.blue} />
+                <rect x={580} y={664} width={96} height={9} rx={4.5} fill={COLORS.navy} opacity={0.8} />
+                <rect x={580} y={679} width={66} height={7} rx={3.5} fill={COLORS.mutedDark} opacity={0.55} />
               </g>
 
               <g filter="url(#cardFloatGlow)">
                 <rect
-                  x={1595}
-                  y={442}
-                  width={200}
-                  height={66}
+                  x={730}
+                  y={830}
+                  width={210}
+                  height={68}
                   rx={18}
                   fill={COLORS.card}
                   stroke={COLORS.cardBorder}
                   strokeWidth={1.5}
                 />
-                <rect x={1613} y={461} width={28} height={28} rx={9} fill={COLORS.mintSoft} />
-                <circle cx={1627} cy={475} r={5.5} fill={COLORS.mintDeep} />
-                <rect x={1653} y={466} width={104} height={9} rx={4.5} fill={COLORS.navy} opacity={0.78} />
-                <rect x={1653} y={481} width={72} height={7} rx={3.5} fill={COLORS.mutedDark} opacity={0.55} />
+                <rect x={750} y={850} width={28} height={28} rx={9} fill={COLORS.mintSoft} />
+                <circle cx={764} cy={864} r={5.5} fill={COLORS.mintDeep} />
+                <rect x={790} y={855} width={108} height={9} rx={4.5} fill={COLORS.navy} opacity={0.78} />
+                <rect x={790} y={870} width={74} height={7} rx={3.5} fill={COLORS.mutedDark} opacity={0.55} />
               </g>
 
               <g filter="url(#cardFloatGlow)">
                 <rect
-                  x={1820}
-                  y={165}
-                  width={190}
-                  height={60}
+                  x={940}
+                  y={525}
+                  width={196}
+                  height={64}
                   rx={18}
                   fill={COLORS.card}
                   stroke={COLORS.cardBorderBlue}
                   strokeWidth={1.5}
                 />
-                <rect x={1838} y={181} width={28} height={28} rx={9} fill={COLORS.roseSoft} />
-                <circle cx={1852} cy={195} r={5.5} fill={COLORS.rose} />
-                <rect x={1878} y={186} width={96} height={9} rx={4.5} fill={COLORS.navy} opacity={0.78} />
-                <rect x={1878} y={201} width={58} height={7} rx={3.5} fill={COLORS.mutedDark} opacity={0.55} />
+                <rect x={960} y={543} width={28} height={28} rx={9} fill={COLORS.roseSoft} />
+                <circle cx={974} cy={557} r={5.5} fill={COLORS.rose} />
+                <rect x={1000} y={548} width={96} height={9} rx={4.5} fill={COLORS.navy} opacity={0.78} />
+                <rect x={1000} y={563} width={60} height={7} rx={3.5} fill={COLORS.mutedDark} opacity={0.55} />
               </g>
 
-              {/* Soft vapour trail */}
               {flightT > 0.01 && (
                 <path
                   d={trailPath}
@@ -357,31 +349,29 @@ export const Scene1Enquiry: React.FC = () => {
               )}
             </g>
 
-            {/* Foreground depth accents (1.25x) */}
+            {/* Faster foreground depth dots (1.25x) */}
             <g transform={`translate(${camPanX * 1.25}, ${camPanY * 1.25})`} opacity={cardIn * 0.75}>
-              <circle cx={1540} cy={595} r={9} fill={COLORS.amber} opacity={0.55} />
-              <circle cx={1930} cy={380} r={11} fill={COLORS.blue} opacity={0.3} />
+              <circle cx={680} cy={970} r={9} fill={COLORS.amber} opacity={0.55} />
+              <circle cx={1020} cy={760} r={11} fill={COLORS.blue} opacity={0.3} />
             </g>
           </g>
 
-          {/* Curved, Pure-White Paper Airplane with layered drop shadows */}
+          {/* Curved Pure-White Paper Airplane with layered drop shadows */}
           {planeOpacity > 0.01 && (
             <g
               transform={`translate(${screenX}, ${screenY}) rotate(${planeRotation}) scale(${planeScale})`}
               opacity={planeOpacity}
             >
-              {/* Soft floating ground shadow below plane */}
               <ellipse
                 cx={-6}
-                cy={52}
-                rx={46}
+                cy={54}
+                rx={48}
                 ry={9}
                 fill={COLORS.cardShadow}
                 opacity={0.9}
               />
 
               <g filter="url(#planeOuterShadow)">
-                {/* Far curved rear wing */}
                 <path
                   d="M -52 -24 C -14 -24, 34 -12, 70 0 C 34 2, -6 4, -34 10 C -44 0, -50 -12, -52 -24 Z"
                   fill="url(#whiteWingTop)"
@@ -389,8 +379,6 @@ export const Scene1Enquiry: React.FC = () => {
                   strokeWidth={1.4}
                   strokeLinejoin="round"
                 />
-
-                {/* Curved inner belly / keel fold with shadow */}
                 <path
                   d="M -32 8 C 4 4, 38 1, 70 0 C 38 11, 6 24, -18 36 C -22 25, -26 16, -32 8 Z"
                   fill="url(#whiteWingShade)"
@@ -399,8 +387,6 @@ export const Scene1Enquiry: React.FC = () => {
                   strokeLinejoin="round"
                   filter="url(#wingFoldShadow)"
                 />
-
-                {/* Sweeping curved near wing (pure white with sculpted shadow & soft edge) */}
                 <path
                   d="M -58 2 C -22 -3, 28 -4, 70 0 C 34 13, 0 28, -32 42 C -38 28, -46 14, -58 2 Z"
                   fill="url(#whiteWingTop)"
@@ -409,8 +395,6 @@ export const Scene1Enquiry: React.FC = () => {
                   strokeLinejoin="round"
                   filter="url(#wingFoldShadow)"
                 />
-
-                {/* Delicate curved contour crease along top wing */}
                 <path
                   d="M -42 5 C -8 2, 28 0, 62 0"
                   fill="none"
@@ -422,7 +406,7 @@ export const Scene1Enquiry: React.FC = () => {
             </g>
           )}
 
-          {/* First Rounded Box emerging from plane at PLANE_TARGET_BOX (1410, 520) */}
+          {/* First Rounded Box at PLANE_TARGET_BOX (540, 870) */}
           {boxPop > 0.01 && (
             <g filter="url(#cardFloatGlow)">
               <rect

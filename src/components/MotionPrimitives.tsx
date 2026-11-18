@@ -2,8 +2,8 @@ import React from 'react';
 import {COLORS} from '../theme';
 
 /**
- * 3D perspective camera wrapper simulating After Effects-style null-rig
- * dollying, panning, and subtle 3D tilt across scenes.
+ * 3D perspective camera wrapper tailored for the 1080x1440 portrait stage,
+ * simulating After Effects-style dollying, panning, and subtle 3D tilt.
  */
 export const CameraStage: React.FC<{
   x?: number;
@@ -21,14 +21,14 @@ export const CameraStage: React.FC<{
   rotateX = 0,
   rotateY = 0,
   rotateZ = 0,
-  origin = '1360px 540px',
+  origin = '540px 880px',
   children,
 }) => {
   return (
     <div
       className="pointer-events-none absolute inset-0"
       style={{
-        perspective: '1800px',
+        perspective: '1600px',
         perspectiveOrigin: origin,
       }}
     >
@@ -47,21 +47,21 @@ export const CameraStage: React.FC<{
 };
 
 /**
- * Subtle ambient cool-blue studio glow behind the right-side product stage,
- * keeping outer canvas borders pure #FFFFFF.
+ * Subtle ambient cool-blue studio glow behind the portrait lower visual stage,
+ * keeping outer canvas edges pure #FFFFFF.
  */
 export const AmbientBackdrop: React.FC<{
   cx?: number;
   cy?: number;
   opacity?: number;
   tint?: string;
-}> = ({cx = 1380, cy = 530, opacity = 1, tint = COLORS.blueSoft}) => {
+}> = ({cx = 540, cy = 880, opacity = 1, tint = COLORS.blueSoft}) => {
   return (
     <div
       className="pointer-events-none absolute inset-0"
       style={{
         opacity,
-        background: `radial-gradient(640px 460px at ${cx}px ${cy}px, ${tint} 0%, rgba(255,255,255,0) 72%)`,
+        background: `radial-gradient(500px 420px at ${cx}px ${cy}px, ${tint} 0%, rgba(255,255,255,0) 74%)`,
       }}
     />
   );

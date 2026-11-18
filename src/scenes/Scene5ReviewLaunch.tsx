@@ -13,19 +13,17 @@ import {
 } from '../theme';
 
 /**
- * Scene 5 (16–20s | Frames 480–599, local 0–119): Revisions and launch.
- * - Preview starts at exact PREVIEW_RECT position with mobile companion visible.
- * - Two Coral Rose (#EB4B77) revision ticks land sequentially beside the preview.
- * - Camera smoothly pulls back & levels to reveal the full website + mobile app on white.
- * - At 19s (local frame 90), reveals CRM-style Mint "Live" badge with pulse dot and
- *   one small multicoloured spark, holding cleanly through 20s.
+ * Scene 5 (16–20s | Frames 480–599, local 0–119) — Tablet/Mobile Portrait Hero (1080x1440).
+ * - Starts at PREVIEW_RECT matching Scene 4's (-7, +3.5) 3D angle.
+ * - Two sequential Coral Rose revision ticks land beside the preview.
+ * - Pulls back cleanly to showcase the desktop + mobile solution on white.
+ * - At 19s (local frame 90), reveals CRM-style Mint "Live" badge beside it with spark.
  */
 export const Scene5ReviewLaunch: React.FC = () => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
   const expOut = Easing.bezier(0.16, 1, 0.3, 1);
 
-  // Sequential revision ticks
   const tick1Pop =
     frame < 10
       ? 0
@@ -53,10 +51,10 @@ export const Scene5ReviewLaunch: React.FC = () => {
     Easing.in(Easing.cubic)
   );
 
-  // f 60..88: Pull back to showcase full responsive product on pure white
+  // Pull back cleanly to frame full website + mobile app + "Live" badge side-by-side
   const pullBack = clampedInterpolate(frame, [60, 88], [0, 1], expOut);
 
-  const finalRect = {x: 970, y: 274, width: 575, height: 414};
+  const finalRect = {x: 78, y: 635, width: 615, height: 443};
   const siteX = PREVIEW_RECT.x + (finalRect.x - PREVIEW_RECT.x) * pullBack;
   const siteY = PREVIEW_RECT.y + (finalRect.y - PREVIEW_RECT.y) * pullBack;
   const siteW =
@@ -64,12 +62,10 @@ export const Scene5ReviewLaunch: React.FC = () => {
   const siteH =
     PREVIEW_RECT.height + (finalRect.height - PREVIEW_RECT.height) * pullBack;
 
-  // Continuous subtle 3D showcase angle: enters at (-8, 4) from Scene 4, gently breathes, settles at (-6.5, 3.5)
   const settleArc = Math.sin(pullBack * Math.PI);
-  const stageRotateY = -8 + pullBack * 1.5 - settleArc * 2;
-  const stageRotateX = 4 - pullBack * 0.5 + settleArc * 1;
+  const stageRotateY = -7 + pullBack * 1.5 - settleArc * 2;
+  const stageRotateX = 3.5 - pullBack * 0.5 + settleArc * 1;
 
-  // f 90 (19s): Reveal "Live" beside it with one small multicoloured spark
   const livePop =
     frame < 90
       ? 0
@@ -80,22 +76,20 @@ export const Scene5ReviewLaunch: React.FC = () => {
         });
   const sparkProgress = clampedInterpolate(frame, [90, 108], [0, 1], expOut);
 
-  // Gentle live-dot pulse after 19s
   const pulsePhase = frame >= 92 ? (Math.sin((frame - 92) * 0.28) + 1) / 2 : 0;
 
   return (
     <AbsoluteFill style={{backgroundColor: COLORS.bg}}>
-      <AmbientBackdrop cx={1330} cy={490} opacity={0.95} />
+      <AmbientBackdrop cx={510} cy={860} opacity={0.95} />
 
-      <CameraStage rotateX={stageRotateX} rotateY={stageRotateY} origin="1330px 490px">
+      <CameraStage rotateX={stageRotateX} rotateY={stageRotateY} origin="510px 860px">
         <svg
-          width={1920}
-          height={1080}
-          viewBox="0 0 1920 1080"
+          width={1080}
+          height={1440}
+          viewBox="0 0 1080 1440"
           shapeRendering="geometricPrecision"
           style={{display: 'block'}}
         >
-          {/* Full Website + Mobile Companion Preview */}
           <WebsiteLayout
             x={siteX}
             y={siteY}
@@ -106,20 +100,20 @@ export const Scene5ReviewLaunch: React.FC = () => {
             mobileProgress={1}
           />
 
-          {/* Two sequential Coral Rose revision ticks beside preview */}
+          {/* Two sequential Coral Rose revision ticks */}
           {ticksFadeOut > 0.01 && (
             <g opacity={ticksFadeOut}>
               <CheckBadge
-                x={1756}
-                y={420}
+                x={905}
+                y={785}
                 popScale={tick1Pop}
                 tickProgress={tick1Draw}
                 size={1.08}
                 fillColor={COLORS.rose}
               />
               <CheckBadge
-                x={1756}
-                y={525}
+                x={905}
+                y={895}
                 popScale={tick2Pop}
                 tickProgress={tick2Draw}
                 size={1.08}
@@ -128,10 +122,10 @@ export const Scene5ReviewLaunch: React.FC = () => {
             </g>
           )}
 
-          {/* Single small multicoloured spark beside "Live" at 19s */}
+          {/* Small multicoloured spark beside "Live" at 19s */}
           <LaunchSpark
-            x={1780}
-            y={422}
+            x={965}
+            y={776}
             progress={sparkProgress}
             scale={0.95}
           />
@@ -140,7 +134,7 @@ export const Scene5ReviewLaunch: React.FC = () => {
         {/* CRM-style Mint "Live" Badge revealed at 19s (local frame 90), held through 20s */}
         {livePop > 0.01 && (
           <div
-            className="pointer-events-none absolute left-[1632px] top-[452px] flex items-center gap-[14px] rounded-[16px] px-[28px] py-[15px] font-sans"
+            className="pointer-events-none absolute left-[768px] top-[798px] flex items-center gap-[14px] rounded-[16px] px-[26px] py-[15px] font-sans"
             style={{
               backgroundColor: COLORS.mintSoft,
               boxShadow: `0 14px 34px ${COLORS.cardShadow}`,
@@ -166,7 +160,7 @@ export const Scene5ReviewLaunch: React.FC = () => {
             <span
               className="font-bold tracking-[-0.02em]"
               style={{
-                fontSize: '36px',
+                fontSize: '34px',
                 lineHeight: 1,
                 color: COLORS.mintDeep,
               }}
@@ -177,7 +171,6 @@ export const Scene5ReviewLaunch: React.FC = () => {
         )}
       </CameraStage>
 
-      {/* Anchored Editable Typography Layer */}
       <SceneTextLayer
         headline={SCENE_COPY.scene5.headline}
         subhead={SCENE_COPY.scene5.subhead}

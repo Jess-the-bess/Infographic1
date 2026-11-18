@@ -1,8 +1,12 @@
 import {Easing, interpolate} from 'remotion';
 
+/**
+ * 3:4 Portrait composition tailored specifically for tablet & mobile hero sections
+ * (1080x1440 @ 30fps, 20 seconds / 600 frames).
+ */
 export const VIDEO_CONFIG = {
-  width: 1920,
-  height: 1080,
+  width: 1080,
+  height: 1440,
   fps: 30,
   durationInFrames: 600,
 } as const;
@@ -23,25 +27,20 @@ export const COLORS = {
   muted: '#E5ECF4',
   mutedDark: '#CBD5E1',
 
-  // Deep navy typography & slate secondary text (aligned to CRM screenshot)
   navy: '#111827',
   slate: '#64748B',
 
-  // Primary Brand Blue (first flight, discovery, sitemap root, primary UI)
   blue: '#39A6DE',
   blueDeep: '#2288C2',
   blueSoft: '#EFF7FD',
 
-  // Warm energy highlight (CTA, revision ticks, data accents)
   rose: '#EB4B77',
   roseSoft: '#FDF0F4',
 
-  // Confirmation & Live state (aligned to CRM Mint sign-off pill)
   mint: '#7CD19F',
   mintDeep: '#15803D',
   mintSoft: '#ECFDF5',
 
-  // Supporting warmth (mood-board swatches, mini donut & launch spark)
   amber: '#E99557',
   yellow: '#FBD354',
 } as const;
@@ -53,25 +52,25 @@ export const SPRING_PRESETS = {
 };
 
 export const PLANE_TARGET_BOX = {
-  cx: 1410,
-  cy: 520,
-  size: 112,
-  rx: 26,
-} as const;
-
-export const DISCOVERY_BLOCK = {
-  x: 1130,
-  y: 340,
-  width: 560,
-  height: 360,
+  cx: 540,
+  cy: 870,
+  size: 124,
   rx: 28,
 } as const;
 
+export const DISCOVERY_BLOCK = {
+  x: 180,
+  y: 650,
+  width: 720,
+  height: 420,
+  rx: 30,
+} as const;
+
 export const PREVIEW_RECT = {
-  x: 1020,
-  y: 255,
-  width: 630,
-  height: 454,
+  x: 100,
+  y: 645,
+  width: 670,
+  height: 482,
 } as const;
 
 export const clampedInterpolate = (

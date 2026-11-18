@@ -16,13 +16,11 @@ import {
 } from '../theme';
 
 /**
- * Scene 4 (12–16s | Frames 360–479, local 0–119): Design and build.
- * - Expanded card becomes a website wireframe at PREVIEW_RECT.
- * - A frosted mood-board swatch dock slides in above; an animated cursor sweeps across
- *   the swatches as their colours & live charts fill the wireframe section by section.
- * - Overlapping CRM Mobile Companion frame slides out, while the 3D camera pans gently
- *   across the build and Domain Globe & Cloud Hosting badges settle beside it.
- * - Settles cleanly at exact PREVIEW_RECT position across the next cut.
+ * Scene 4 (12–16s | Frames 360–479, local 0–119) — Tablet/Mobile Portrait Hero (1080x1440).
+ * - Expanded card at PREVIEW_RECT (100, 645, 670x482) fills section-by-section as
+ *   cursor sweeps across the mood-board swatch dock above.
+ * - Overlapping Mobile Companion card glides out, Domain Globe & Hosting Cloud badges
+ *   settle cleanly on the right, and 3D stage holds (-7, +3.5) continuity into Scene 5.
  */
 export const Scene4DesignBuild: React.FC = () => {
   const frame = useCurrentFrame();
@@ -31,14 +29,12 @@ export const Scene4DesignBuild: React.FC = () => {
 
   const wireframeFade = clampedInterpolate(frame, [0, 12], [0.35, 1], expOut);
 
-  // Mood-board swatch dock slides in smoothly above preview
   const swatchSlide = clampedInterpolate(frame, [8, 28], [0, 1], expOut);
-  const swatchX = PREVIEW_RECT.x - (1 - swatchSlide) * 48;
+  const swatchX = PREVIEW_RECT.x - (1 - swatchSlide) * 44;
 
-  // Animated cursor sweeps across swatches (f 20..62)
   const cursorSweep = clampedInterpolate(frame, [20, 62], [0, 1], Easing.inOut(Easing.cubic));
-  const cursorX = PREVIEW_RECT.x + 42 + cursorSweep * 216;
-  const cursorY = 204 + Math.sin(cursorSweep * Math.PI * 3) * 4;
+  const cursorX = PREVIEW_RECT.x + 44 + cursorSweep * 220;
+  const cursorY = 566 + Math.sin(cursorSweep * Math.PI * 3) * 4;
   const cursorOpacity =
     clampedInterpolate(frame, [16, 22], [0, 1]) *
     (1 - clampedInterpolate(frame, [62, 72], [0, 1]));
@@ -50,7 +46,6 @@ export const Scene4DesignBuild: React.FC = () => {
     Easing.out(Easing.cubic)
   );
 
-  // Section-by-section colour fill (f 24..72)
   const fillProgress = clampedInterpolate(
     frame,
     [24, 72],
@@ -58,17 +53,14 @@ export const Scene4DesignBuild: React.FC = () => {
     Easing.inOut(Easing.cubic)
   );
 
-  // Overlapping CRM Mobile App companion slides in smoothly (f 50..82)
   const mobileProgress = clampedInterpolate(frame, [50, 82], [0, 1], expOut);
 
-  // Gentle continuous 3D camera movement across build & pan, matching (-8, 4) at both scene cuts
   const panPhase = clampedInterpolate(frame, [68, 112], [0, Math.PI]);
   const buildArc = Math.sin(clampedInterpolate(frame, [0, 119], [0, Math.PI]));
-  const panOffset = -Math.sin(panPhase) * 18;
-  const stageRotateY = -8 - buildArc * 3 + Math.sin(panPhase) * 2.5;
-  const stageRotateX = 4 + buildArc * 1.5 - Math.sin(panPhase) * 1;
+  const panOffset = -Math.sin(panPhase) * 16;
+  const stageRotateY = -7 - buildArc * 3 + Math.sin(panPhase) * 2.5;
+  const stageRotateX = 3.5 + buildArc * 1.5 - Math.sin(panPhase) * 1;
 
-  // Domain Globe & Hosting Cloud badges settle beside preview
   const globePop =
     frame < 72
       ? 0
@@ -90,17 +82,17 @@ export const Scene4DesignBuild: React.FC = () => {
 
   return (
     <AbsoluteFill style={{backgroundColor: COLORS.bg}}>
-      <AmbientBackdrop cx={1360} cy={490} opacity={0.95} />
+      <AmbientBackdrop cx={520} cy={880} opacity={0.95} />
 
       <CameraStage
         rotateX={stageRotateX}
         rotateY={stageRotateY}
-        origin="1360px 480px"
+        origin="520px 880px"
       >
         <svg
-          width={1920}
-          height={1080}
-          viewBox="0 0 1920 1080"
+          width={1080}
+          height={1440}
+          viewBox="0 0 1080 1440"
           shapeRendering="geometricPrecision"
           style={{display: 'block'}}
         >
@@ -111,7 +103,7 @@ export const Scene4DesignBuild: React.FC = () => {
                 dy="14"
                 stdDeviation="14"
                 floodColor="#39A6DE"
-                floodOpacity="0.14"
+                floodOpacity="0.16"
               />
             </filter>
           </defs>
@@ -119,16 +111,16 @@ export const Scene4DesignBuild: React.FC = () => {
           {/* Mood-board swatch dock */}
           {swatchSlide > 0.01 && (
             <g
-              transform={`translate(${swatchX}, 168)`}
+              transform={`translate(${swatchX}, 534)`}
               opacity={swatchSlide}
               filter="url(#badgeFloatGlow)"
             >
               <rect
                 x={0}
                 y={0}
-                width={308}
-                height={62}
-                rx={31}
+                width={316}
+                height={64}
+                rx={32}
                 fill={COLORS.card}
                 stroke={COLORS.cardBorderBlue}
                 strokeWidth={1.6}
@@ -137,7 +129,7 @@ export const Scene4DesignBuild: React.FC = () => {
                 const isActive =
                   frame >= 20 && frame <= 68 && activeSwatchIdx === i;
                 return (
-                  <g key={hex} transform={`translate(${44 + i * 55}, 31)`}>
+                  <g key={hex} transform={`translate(${45 + i * 56}, 32)`}>
                     {isActive && (
                       <circle
                         cx={0}
@@ -149,19 +141,14 @@ export const Scene4DesignBuild: React.FC = () => {
                         opacity={0.45}
                       />
                     )}
-                    <circle
-                      cx={0}
-                      cy={0}
-                      r={isActive ? 18 : 16}
-                      fill={hex}
-                    />
+                    <circle cx={0} cy={0} r={isActive ? 18 : 16} fill={hex} />
                   </g>
                 );
               })}
             </g>
           )}
 
-          {/* Website Wireframe -> Section-by-section Colour Build + Mobile Companion */}
+          {/* Website + Mobile Companion Build */}
           <g opacity={wireframeFade}>
             <WebsiteLayout
               x={PREVIEW_RECT.x}
@@ -174,10 +161,10 @@ export const Scene4DesignBuild: React.FC = () => {
             />
           </g>
 
-          {/* Dotted signal connectors to Domain Globe & Cloud Hosting */}
+          {/* Dotted signal connectors */}
           {globePop > 0.1 && (
             <path
-              d="M 1692 380 L 1734 380 M 1780 432 L 1780 474"
+              d="M 812 785 L 862 785 M 912 835 L 912 875"
               fill="none"
               stroke={COLORS.blue}
               strokeWidth={3}
@@ -190,7 +177,7 @@ export const Scene4DesignBuild: React.FC = () => {
           {/* Domain Globe badge */}
           {globePop > 0.01 && (
             <g
-              transform={`translate(1780, ${380 + (1 - globePop) * 18}) scale(${0.88 + globePop * 0.12})`}
+              transform={`translate(912, ${785 + (1 - globePop) * 18}) scale(${0.88 + globePop * 0.12})`}
               opacity={globePop}
               filter="url(#badgeFloatGlow)"
             >
@@ -234,7 +221,6 @@ export const Scene4DesignBuild: React.FC = () => {
                 stroke={COLORS.navy}
                 strokeWidth={1.8}
               />
-              {/* Active Mint status dot */}
               <circle
                 cx={30}
                 cy={-30}
@@ -249,7 +235,7 @@ export const Scene4DesignBuild: React.FC = () => {
           {/* Hosting Cloud badge */}
           {cloudPop > 0.01 && (
             <g
-              transform={`translate(1780, ${516 + (1 - cloudPop) * 18}) scale(${0.88 + cloudPop * 0.12})`}
+              transform={`translate(912, ${925 + (1 - cloudPop) * 18}) scale(${0.88 + cloudPop * 0.12})`}
               opacity={cloudPop}
               filter="url(#badgeFloatGlow)"
             >
@@ -304,7 +290,6 @@ export const Scene4DesignBuild: React.FC = () => {
         />
       </CameraStage>
 
-      {/* Anchored Editable Typography Layer */}
       <SceneTextLayer
         headline={SCENE_COPY.scene4.headline}
         subhead={SCENE_COPY.scene4.subhead}

@@ -11,8 +11,9 @@ export interface SceneTextLayerProps {
 }
 
 /**
- * Masked kinetic Plus Jakarta Sans typography layer anchored cleanly on the left.
- * Keeps wording exact and readable across screen sizes while graphics animate in 3D on the right.
+ * Masked kinetic Plus Jakarta Sans typography layer stacked cleanly at the top
+ * of the tablet/mobile hero canvas so wording remains large, exact, and crisp
+ * while the 3D product stage animates in the lower viewport.
  */
 export const SceneTextLayer: React.FC<SceneTextLayerProps> = ({
   headline,
@@ -50,21 +51,21 @@ export const SceneTextLayer: React.FC<SceneTextLayerProps> = ({
 
   return (
     <div
-      className="pointer-events-none absolute left-[104px] top-[348px] w-[720px] select-none font-sans"
+      className="pointer-events-none absolute left-[76px] right-[76px] top-[88px] select-none font-sans"
       style={{opacity: fadeOut}}
     >
       {/* Kinetic accent pill bar */}
-      <div className="mb-[26px] flex items-center gap-[10px]">
+      <div className="mb-[24px] flex items-center gap-[10px]">
         <div
-          className="h-[6px] rounded-full"
+          className="h-[7px] rounded-full"
           style={{
-            width: `${Math.round(barProgress * 46)}px`,
+            width: `${Math.round(barProgress * 52)}px`,
             backgroundColor: accentColor,
             opacity: barProgress,
           }}
         />
         <div
-          className="h-[6px] w-[10px] rounded-full"
+          className="h-[7px] w-[12px] rounded-full"
           style={{
             backgroundColor: COLORS.mint,
             opacity: barProgress,
@@ -78,7 +79,7 @@ export const SceneTextLayer: React.FC<SceneTextLayerProps> = ({
         <h2
           className="m-0 font-bold tracking-[-0.032em]"
           style={{
-            fontSize: '70px',
+            fontSize: '76px',
             lineHeight: 1.08,
             color: COLORS.navy,
             opacity: Math.min(1, hProgress * 1.4),
@@ -90,12 +91,12 @@ export const SceneTextLayer: React.FC<SceneTextLayerProps> = ({
       </div>
 
       {/* Masked subhead slide-up */}
-      <div className="mt-[22px] overflow-hidden pb-[4px]">
+      <div className="mt-[20px] overflow-hidden pb-[4px]">
         <p
           className="m-0 font-medium tracking-[-0.012em]"
           style={{
-            fontSize: '35px',
-            lineHeight: 1.38,
+            fontSize: '38px',
+            lineHeight: 1.36,
             color: COLORS.slate,
             opacity: Math.min(1, sProgress * 1.4),
             transform: `translate3d(0, ${(1 - sProgress) * 34}px, 0)`,

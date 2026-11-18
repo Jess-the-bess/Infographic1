@@ -26,7 +26,7 @@ export default function App() {
         allowFullscreen={false}
         showVolumeControls={false}
         style={{width: '100%'}}
-        className="max-w-[min(100%,calc(100vh*16/9),1920px)] bg-white"
+        className="max-w-[min(100%,calc(100vh*3/4),768px)] bg-white"
       />
     </section>
   );

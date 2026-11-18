@@ -10,39 +10,34 @@ import {SCENE_COPY} from '../copy';
 import {COLORS, PREVIEW_RECT, clampedInterpolate} from '../theme';
 
 /**
- * Scene 3 (8–12s | Frames 240–359, local 0–119): Planning.
- * - Match-cuts seamlessly from full-screen Blue -> Blue root card on white.
- * - Pulls back in 3D space to reveal glowing connector lines & elevated CRM-style
- *   research, sitemap, and copy cards snapping cleanly into place.
- * - Cursor taps the central page node; in the final 0.5s (f 104..119) it expands
- *   smoothly to PREVIEW_RECT to carry the transition into Design & Build.
+ * Scene 3 (8–12s | Frames 240–359, local 0–119) — Tablet/Mobile Portrait Hero (1080x1440).
+ * - Match-cuts from full-screen Blue (1080x1440) into Blue root card at (420, 500).
+ * - Pulls back in 3D space to reveal shadowed sitemap connectors & research/copy cards.
+ * - Cursor clicks the central card; in final 0.5s it expands to PREVIEW_RECT.
  */
 export const Scene3ResearchSitemap: React.FC = () => {
   const frame = useCurrentFrame();
   const expOut = Easing.bezier(0.16, 1, 0.3, 1);
 
-  // f 0..24: Pull back from full-screen Blue block to Blue root card
   const pullBack = clampedInterpolate(frame, [0, 24], [0, 1], expOut);
 
-  const rootTarget = {x: 1300, y: 205, width: 220, height: 82, rx: 18};
+  const rootTarget = {x: 420, y: 500, width: 240, height: 86, rx: 18};
   const rootX = 0 + rootTarget.x * pullBack;
   const rootY = 0 + rootTarget.y * pullBack;
-  const rootW = 1920 + (rootTarget.width - 1920) * pullBack;
-  const rootH = 1080 + (rootTarget.height - 1080) * pullBack;
+  const rootW = 1080 + (rootTarget.width - 1080) * pullBack;
+  const rootH = 1440 + (rootTarget.height - 1440) * pullBack;
   const rootRx = rootTarget.rx * pullBack;
 
-  // f 24..56: Sitemap connector lines draw downward
   const lineDraw = clampedInterpolate(frame, [24, 56], [0, 1], expOut);
-  const lineLen = 1000;
+  const lineLen = 1200;
 
-  // Staggered card entrances
   const row1Progress = clampedInterpolate(frame, [38, 62], [0, 1], expOut);
   const row2Progress = clampedInterpolate(frame, [54, 78], [0, 1], expOut);
 
-  // Cursor glides to center card (1410, 432) and clicks at f 96..104
+  // Cursor glides to center card (540, 748) and clicks at f 96
   const cursorMove = clampedInterpolate(frame, [76, 95], [0, 1], expOut);
-  const cursorX = 1640 + (1425 - 1640) * cursorMove;
-  const cursorY = 640 + (440 - 640) * cursorMove;
+  const cursorX = 780 + (552 - 780) * cursorMove;
+  const cursorY = 980 + (756 - 980) * cursorMove;
   const cursorClickRipple = clampedInterpolate(
     frame,
     [96, 108],
@@ -51,13 +46,14 @@ export const Scene3ResearchSitemap: React.FC = () => {
   );
   const cursorScale =
     frame >= 95 && frame <= 101
-      ? 1 - clampedInterpolate(frame, [95, 98], [0, 0.16]) + clampedInterpolate(frame, [98, 101], [0, 0.16])
+      ? 1 -
+        clampedInterpolate(frame, [95, 98], [0, 0.16]) +
+        clampedInterpolate(frame, [98, 101], [0, 0.16])
       : 1;
   const cursorOpacity =
     clampedInterpolate(frame, [76, 82], [0, 1]) *
     (1 - clampedInterpolate(frame, [104, 112], [0, 1]));
 
-  // f 104..119 (final 0.5s): Expand center sitemap card -> PREVIEW_RECT
   const expandT = clampedInterpolate(
     frame,
     [104, 119],
@@ -66,33 +62,33 @@ export const Scene3ResearchSitemap: React.FC = () => {
   );
   const othersFade = 1 - clampedInterpolate(frame, [102, 110], [0, 1]);
 
-  // Subtle, smooth 3D architectural angle: enters flat from Scene 2 full-frame, peaks at (-11, 5.5), settles at (-8, 4) for Scene 4
+  // Subtle smooth 3D angle settling at (-7, +3.5) for Scene 4 handoff
   const midArc = Math.sin(clampedInterpolate(frame, [24, 104], [0, Math.PI]));
-  const stageRotateX = pullBack * (4 + midArc * 1.8);
-  const stageRotateY = pullBack * (-8 - midArc * 3.2);
+  const stageRotateX = pullBack * (3.5 + midArc * 1.8);
+  const stageRotateY = pullBack * (-7 - midArc * 3.2);
 
-  const centerBase = {x: 1300, y: 365, width: 220, height: 134, rx: 16};
+  const centerBase = {x: 415, y: 675, width: 250, height: 146, rx: 16};
   const expX = centerBase.x + (PREVIEW_RECT.x - centerBase.x) * expandT;
   const expY = centerBase.y + (PREVIEW_RECT.y - centerBase.y) * expandT;
   const expW = centerBase.width + (PREVIEW_RECT.width - centerBase.width) * expandT;
   const expH = centerBase.height + (PREVIEW_RECT.height - centerBase.height) * expandT;
   const expRx = centerBase.rx + (22 - centerBase.rx) * expandT;
 
-  const sideCols = [1030, 1570];
+  const sideCols = [105, 725];
 
   return (
     <AbsoluteFill style={{backgroundColor: COLORS.bg}}>
-      <AmbientBackdrop cx={1410} cy={460} opacity={pullBack} />
+      <AmbientBackdrop cx={540} cy={780} opacity={pullBack} />
 
       <CameraStage
         rotateX={stageRotateX}
         rotateY={stageRotateY}
-        origin="1410px 440px"
+        origin="540px 780px"
       >
         <svg
-          width={1920}
-          height={1080}
-          viewBox="0 0 1920 1080"
+          width={1080}
+          height={1440}
+          viewBox="0 0 1080 1440"
           shapeRendering="geometricPrecision"
           style={{display: 'block'}}
         >
@@ -132,83 +128,79 @@ export const Scene3ResearchSitemap: React.FC = () => {
           {frame >= 22 && othersFade > 0.01 && (
             <g opacity={othersFade} filter="url(#connectorShadow)">
               <path
-                d="M 1410 287 L 1410 326 M 1140 326 L 1680 326 M 1140 326 L 1140 365 M 1410 326 L 1410 365 M 1680 326 L 1680 365 M 1140 499 L 1140 555 M 1410 499 L 1410 555 M 1680 499 L 1680 555"
+                d="M 540 586 L 540 634 M 230 634 L 850 634 M 230 634 L 230 675 M 540 634 L 540 675 M 850 634 L 850 675 M 230 821 L 230 880 M 540 821 L 540 880 M 850 821 L 850 880"
                 fill="none"
                 stroke={COLORS.blue}
-                strokeWidth={3.5}
+                strokeWidth={3.6}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeDasharray={lineLen}
                 strokeDashoffset={lineLen * (1 - lineDraw)}
               />
-              {/* Junction node dots */}
               {lineDraw > 0.55 && (
                 <g opacity={(lineDraw - 0.55) / 0.45}>
-                  <circle cx={1410} cy={326} r={5.5} fill={COLORS.blue} />
-                  <circle cx={1140} cy={326} r={4.5} fill={COLORS.blue} />
-                  <circle cx={1680} cy={326} r={4.5} fill={COLORS.blue} />
+                  <circle cx={540} cy={634} r={5.5} fill={COLORS.blue} />
+                  <circle cx={230} cy={634} r={4.5} fill={COLORS.blue} />
+                  <circle cx={850} cy={634} r={4.5} fill={COLORS.blue} />
                 </g>
               )}
             </g>
           )}
 
-          {/* Side Row 1 cards (CRM white elevated cards with crisp micro-icons) */}
+          {/* Side Row 1 cards */}
           {row1Progress > 0.01 && othersFade > 0.01 && (
             <g opacity={row1Progress * othersFade} filter="url(#sitemapCardGlow)">
               {sideCols.map((cx, i) => (
                 <g
                   key={cx}
-                  transform={`translate(${cx}, ${365 + (1 - row1Progress) * 26}) scale(${0.92 + row1Progress * 0.08})`}
+                  transform={`translate(${cx}, ${675 + (1 - row1Progress) * 26}) scale(${0.92 + row1Progress * 0.08})`}
                 >
                   <rect
                     x={0}
                     y={0}
-                    width={220}
-                    height={134}
-                    rx={16}
+                    width={250}
+                    height={146}
+                    rx={18}
                     fill={COLORS.card}
                     stroke={COLORS.cardBorderBlue}
                     strokeWidth={1.6}
                   />
-                  {/* Tinted icon well */}
                   <rect
-                    x={20}
-                    y={20}
-                    width={30}
-                    height={30}
+                    x={22}
+                    y={22}
+                    width={32}
+                    height={32}
                     rx={9}
                     fill={i === 0 ? COLORS.blueSoft : COLORS.roseSoft}
                   />
                   {i === 0 ? (
-                    /* Market research mini bar-chart glyph */
                     <g fill={COLORS.blue}>
-                      <rect x={27} y={37} width={3.5} height={7} rx={1.5} />
-                      <rect x={33} y={32} width={3.5} height={12} rx={1.5} />
-                      <rect x={39} y={28} width={3.5} height={16} rx={1.5} />
+                      <rect x={29} y={40} width={4} height={8} rx={1.5} />
+                      <rect x={36} y={35} width={4} height={13} rx={1.5} />
+                      <rect x={43} y={30} width={4} height={18} rx={1.5} />
                     </g>
                   ) : (
-                    /* Draft copy editorial line glyph */
-                    <g stroke={COLORS.rose} strokeWidth={2.2} strokeLinecap="round">
-                      <line x1={28} y1={30} x2={42} y2={30} />
-                      <line x1={28} y1={36} x2={40} y2={36} />
-                      <line x1={28} y1={42} x2={36} y2={42} />
+                    <g stroke={COLORS.rose} strokeWidth={2.4} strokeLinecap="round">
+                      <line x1={30} y1={32} x2={46} y2={32} />
+                      <line x1={30} y1={38} x2={43} y2={38} />
+                      <line x1={30} y1={44} x2={39} y2={44} />
                     </g>
                   )}
                   <rect
-                    x={60}
-                    y={29}
-                    width={84}
+                    x={66}
+                    y={32}
+                    width={96}
                     height={12}
                     rx={6}
                     fill={COLORS.navy}
                     opacity={0.82}
                   />
-                  <rect x={20} y={66} width={176} height={10} rx={5} fill={COLORS.muted} />
-                  <rect x={20} y={86} width={136} height={10} rx={5} fill={COLORS.muted} />
+                  <rect x={22} y={72} width={202} height={10} rx={5} fill={COLORS.muted} />
+                  <rect x={22} y={92} width={154} height={10} rx={5} fill={COLORS.muted} />
                   <rect
-                    x={20}
-                    y={106}
-                    width={96}
+                    x={22}
+                    y={114}
+                    width={108}
                     height={8}
                     rx={4}
                     fill={i === 0 ? COLORS.blueSoft : COLORS.roseSoft}
@@ -218,10 +210,10 @@ export const Scene3ResearchSitemap: React.FC = () => {
             </g>
           )}
 
-          {/* Row 2 cards (sub-pages, analytics, flows) */}
+          {/* Row 2 cards */}
           {row2Progress > 0.01 && othersFade > 0.01 && (
             <g opacity={row2Progress * othersFade} filter="url(#sitemapCardGlow)">
-              {[1030, 1300, 1570].map((cx, i) => {
+              {[105, 415, 725].map((cx, i) => {
                 const chipBg =
                   i === 0
                     ? COLORS.blueSoft
@@ -238,34 +230,34 @@ export const Scene3ResearchSitemap: React.FC = () => {
                 return (
                   <g
                     key={cx}
-                    transform={`translate(${cx}, ${555 + (1 - row2Progress) * 26}) scale(${0.92 + row2Progress * 0.08})`}
+                    transform={`translate(${cx}, ${880 + (1 - row2Progress) * 26}) scale(${0.92 + row2Progress * 0.08})`}
                   >
                     <rect
                       x={0}
                       y={0}
-                      width={220}
-                      height={112}
-                      rx={16}
+                      width={250}
+                      height={120}
+                      rx={18}
                       fill={COLORS.card}
                       stroke={COLORS.cardBorder}
                       strokeWidth={1.5}
                     />
-                    <rect x={20} y={20} width={28} height={28} rx={8} fill={chipBg} />
-                    <circle cx={34} cy={34} r={5.5} fill={chipDot} />
+                    <rect x={22} y={22} width={30} height={30} rx={9} fill={chipBg} />
+                    <circle cx={37} cy={37} r={6} fill={chipDot} />
                     <rect
-                      x={58}
-                      y={28}
-                      width={i === 1 ? 92 : 74}
+                      x={64}
+                      y={31}
+                      width={i === 1 ? 102 : 84}
                       height={11}
                       rx={5.5}
                       fill={COLORS.navy}
                       opacity={0.8}
                     />
-                    <rect x={20} y={62} width={172} height={9} rx={4.5} fill={COLORS.muted} />
+                    <rect x={22} y={68} width={196} height={9} rx={4.5} fill={COLORS.muted} />
                     <rect
-                      x={20}
-                      y={80}
-                      width={126}
+                      x={22}
+                      y={86}
+                      width={142}
                       height={9}
                       rx={4.5}
                       fill={COLORS.muted}
@@ -293,11 +285,11 @@ export const Scene3ResearchSitemap: React.FC = () => {
               />
               {pullBack > 0.65 && (
                 <g opacity={(pullBack - 0.65) / 0.35}>
-                  <circle cx={rootX + 46} cy={rootY + 41} r={8} fill={COLORS.card} opacity={0.9} />
+                  <circle cx={rootX + 50} cy={rootY + 43} r={8.5} fill={COLORS.card} opacity={0.9} />
                   <rect
-                    x={rootX + 66}
-                    y={rootY + 35}
-                    width={106}
+                    x={rootX + 72}
+                    y={rootY + 37}
+                    width={118}
                     height={12}
                     rx={6}
                     fill={COLORS.card}
@@ -307,7 +299,7 @@ export const Scene3ResearchSitemap: React.FC = () => {
             </g>
           )}
 
-          {/* Center Expanding Sitemap Card -> expands seamlessly to PREVIEW_RECT */}
+          {/* Center Expanding Card -> PREVIEW_RECT */}
           {row1Progress > 0.01 && (
             <g opacity={row1Progress} filter="url(#sitemapCardGlow)">
               <rect
@@ -326,43 +318,43 @@ export const Scene3ResearchSitemap: React.FC = () => {
               />
               <g opacity={1 - expandT}>
                 <rect
-                  x={expX + 20}
-                  y={expY + 20}
-                  width={30}
-                  height={30}
+                  x={expX + 22}
+                  y={expY + 22}
+                  width={32}
+                  height={32}
                   rx={9}
                   fill={COLORS.blueSoft}
                 />
-                <circle cx={expX + 35} cy={expY + 35} r={6} fill={COLORS.blue} />
+                <circle cx={expX + 38} cy={expY + 38} r={6} fill={COLORS.blue} />
                 <rect
-                  x={expX + 60}
-                  y={expY + 29}
-                  width={98}
+                  x={expX + 66}
+                  y={expY + 32}
+                  width={108}
                   height={12}
                   rx={6}
                   fill={COLORS.navy}
                   opacity={0.88}
                 />
                 <rect
-                  x={expX + 20}
-                  y={66 + expY}
-                  width={176}
+                  x={expX + 22}
+                  y={expY + 72}
+                  width={202}
                   height={11}
                   rx={5.5}
                   fill={COLORS.muted}
                 />
                 <rect
-                  x={expX + 20}
-                  y={88 + expY}
-                  width={136}
+                  x={expX + 22}
+                  y={expY + 94}
+                  width={154}
                   height={11}
                   rx={5.5}
                   fill={COLORS.muted}
                 />
                 <rect
-                  x={expX + 20}
-                  y={108 + expY}
-                  width={82}
+                  x={expX + 22}
+                  y={expY + 114}
+                  width={94}
                   height={8}
                   rx={4}
                   fill={COLORS.blueSoft}
@@ -382,7 +374,6 @@ export const Scene3ResearchSitemap: React.FC = () => {
         />
       </CameraStage>
 
-      {/* Anchored Editable Typography Layer */}
       <SceneTextLayer
         headline={SCENE_COPY.scene3.headline}
         subhead={SCENE_COPY.scene3.subhead}
