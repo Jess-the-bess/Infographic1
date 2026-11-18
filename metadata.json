@@ -1,0 +1,6 @@
+{
+  "name": "TechStack Sydney Explainer",
+  "description": "Silent 20-second Open Doodles style Remotion animation section.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,3039 @@
+Here is the complete, copy-paste-ready Remotion (React + TypeScript) project for the silent, 20-second TechStack Sydney homepage animation (1920×1080, 30fps, 600 frames).
+Architecture Highlights
+Pure #FFFFFF background & right-half layout: Every illustration, character, laptop, prop, and spark is constrained to x ≥ 995 on the 1920×1080 canvas, leaving the entire left half (x: 0–960) completely clear for captions.
+Open Doodles visual language: Loose navy linework (#172047), rounded caps/joins, playful proportions, flat fills strictly in navy, violet (#8B5CF6), and indigo (#3B42B8), subtle doodle motion ticks, and one small multicoloured spark at launch. Zero text, letters, numbers, logos, borders, or player controls.
+Single-source character rigs (src/characters/): Owner.tsx and Teammate.tsx share locked proportions, facial features, hair silhouettes, and sweatshirt designs across every cut, driven via rigged <g> transforms.
+Exact match cuts & deterministic math: Shared geometry constants (MATCH_CARD and CLOSEUP_SCREEN) ensure pixel-accurate match cuts at 12s and 16s, and all motion uses useCurrentFrame(), spring(), and clamped interpolate().
+1. package.json
+JSON
+{
+  "name": "techstack-sydney-explainer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Silent 20s Open Doodles style Remotion animation for TechStack Sydney",
+  "scripts": {
+    "start": "npx remotion studio src/index.ts",
+    "build": "npx remotion render src/index.ts TechStackHomepage out/techstack-homepage.mp4"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.200",
+    "@remotion/cli": "^4.0.200"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.5.4"
+  }
+}
+2. tsconfig.json
+JSON
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*"]
+}
+3. src/index.ts
+Ts
+import {registerRoot} from 'remotion';
+import {Root} from './Root';
+
+registerRoot(Root);
+4. src/Root.tsx
+Tsx
+import React from 'react';
+import {Composition} from 'remotion';
+import {TechStackExplainer} from './TechStackExplainer';
+import {VIDEO_CONFIG} from './theme';
+
+export const Root: React.FC = () => {
+  return (
+    <Composition
+      id="TechStackHomepage"
+      component={TechStackExplainer}
+      durationInFrames={VIDEO_CONFIG.durationInFrames}
+      fps={VIDEO_CONFIG.fps}
+      width={VIDEO_CONFIG.width}
+      height={VIDEO_CONFIG.height}
+    />
+  );
+};
+5. src/theme.ts
+Ts
+import {interpolate} from 'remotion';
+
+export const VIDEO_CONFIG = {
+  width: 1920,
+  height: 1080,
+  fps: 30,
+  durationInFrames: 600,
+} as const;
+
+export const COLORS = {
+  bg: '#FFFFFF',
+  paper: '#FFFFFF',
+  navy: '#172047',
+  navyTint: '#E9ECF7',
+  violet: '#8B5CF6',
+  violetSoft: '#DDD6FE',
+  indigo: '#3B42B8',
+  indigoSoft: '#C7D2FE',
+  // Used exclusively for the single small multicoloured spark at launch
+  sparkCoral: '#FF5A5F',
+  sparkAmber: '#FFB400',
+  sparkMint: '#10B981',
+  sparkSky: '#38BDF8',
+  sparkViolet: '#8B5CF6',
+} as const;
+
+export const STROKE = {
+  main: 4.2,
+  detail: 3.0,
+  fine: 2.2,
+  lineCap: 'round' as const,
+  lineJoin: 'round' as const,
+};
+
+export const SPRING_PRESETS = {
+  snappy: {damping: 14, stiffness: 180, mass: 0.75},
+  smooth: {damping: 18, stiffness: 110, mass: 0.9},
+  bouncy: {damping: 10, stiffness: 200, mass: 0.7},
+};
+
+// Shared exact geometry for match cuts
+export const MATCH_CARD = {
+  x: 1290,
+  y: 465,
+  width: 250,
+  height: 175,
+} as const;
+
+export const CLOSEUP_SCREEN = {
+  x: 1040,
+  y: 225,
+  width: 700,
+  height: 490,
+} as const;
+
+/**
+ * Deterministic clamped interpolation helper.
+ * Always clamps both ends to guarantee zero out-of-range surprises.
+ */
+export const clampedInterpolate = (
+  frame: number,
+  inputRange: [number, number],
+  outputRange: [number, number]
+): number => {
+  return interpolate(frame, inputRange, outputRange, {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+};
+6. src/characters/Owner.tsx
+Tsx
+import React from 'react';
+import {COLORS, STROKE} from '../theme';
+import {PhoneDoodle} from '../components/DoodleProps';
+
+export interface OwnerProps {
+  view: 'desk' | 'call';
+  expression: 'neutral' | 'happy';
+  blink?: boolean;
+  headTilt?: number;
+  rightShoulderAngle?: number;
+  rightElbowAngle?: number;
+  leftShoulderAngle?: number;
+  holdingPhone?: boolean;
+  callGestureProgress?: number;
+  x?: number;
+  y?: number;
+  scale?: number;
+}
+
+/**
+ * Single-source parametric SVG rig for the Small-Business Owner.
+ * Visual identity: Top messy bun + curved forehead wisps, warm expression,
+ * oversized violet sweatshirt (#8B5CF6) with loose navy ink linework.
+ */
+export const Owner: React.FC<OwnerProps> = ({
+  view,
+  expression,
+  blink = false,
+  headTilt = 0,
+  rightShoulderAngle = 0,
+  rightElbowAngle = 0,
+  leftShoulderAngle = 0,
+  holdingPhone = false,
+  callGestureProgress = 0,
+  x = 0,
+  y = 0,
+  scale = 1,
+}) => {
+  const renderHead = () => (
+    <g
+      transform={`translate(0, -108) rotate(${headTilt})`}
+      style={{transformOrigin: '0px 38px'}}
+    >
+      {/* Back messy bun */}
+      <path
+        d="M -6 -62 C -26 -88, 12 -118, 38 -96 C 62 -76, 46 -44, 18 -46 Z"
+        fill={COLORS.navy}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap={STROKE.lineCap}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+      {/* Loose bun texture strand */}
+      <path
+        d="M 8 -86 C 18 -92, 30 -82, 26 -70"
+        fill="none"
+        stroke={COLORS.paper}
+        strokeWidth={STROKE.fine}
+        strokeLinecap={STROKE.lineCap}
+      />
+      {/* Loose trailing hair wisps at back of neck */}
+      <path
+        d="M 32 -32 C 48 -14, 46 8, 34 20"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeLinecap={STROKE.lineCap}
+      />
+
+      {/* Neck */}
+      <path
+        d="M -14 14 L -12 48 C -2 54, 14 54, 22 46 L 20 14 Z"
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap={STROKE.lineCap}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+
+      {/* Head silhouette */}
+      <path
+        d="M -38 -16 C -42 -48, -14 -64, 14 -60 C 42 -56, 48 -24, 44 4 C 40 28, 16 40, -6 38 C -28 36, -36 12, -38 -16 Z"
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap={STROKE.lineCap}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+
+      {/* Hair crown & signature side swoop */}
+      <path
+        d="M -40 -14 C -42 -52, -10 -70, 22 -64 C 48 -58, 54 -22, 46 6 C 42 -6, 36 -18, 28 -24 C 12 -36, -12 -36, -34 -18 Z"
+        fill={COLORS.navy}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeLinecap={STROKE.lineCap}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+      {/* Forehead loose curl wisp */}
+      <path
+        d="M -36 -14 C -46 -4, -44 10, -34 16"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeLinecap={STROKE.lineCap}
+      />
+
+      {/* Right-side ear (viewer's right, facing slightly front-left) */}
+      <path
+        d="M 38 -8 C 50 -10, 52 8, 38 12"
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeLinecap={STROKE.lineCap}
+      />
+      <path
+        d="M 42 -1 C 45 0, 44 6, 40 6"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.fine}
+        strokeLinecap={STROKE.lineCap}
+      />
+
+      {/* Eyebrows */}
+      <path
+        d={
+          expression === 'happy'
+            ? 'M -24 -20 C -18 -25, -10 -24, -6 -19'
+            : 'M -24 -16 C -18 -19, -10 -19, -6 -16'
+        }
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeLinecap={STROKE.lineCap}
+      />
+      <path
+        d={
+          expression === 'happy'
+            ? 'M 6 -21 C 13 -26, 21 -24, 25 -19'
+            : 'M 6 -17 C 13 -20, 21 -19, 25 -16'
+        }
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeLinecap={STROKE.lineCap}
+      />
+
+      {/* Eyes (blink via deterministic scaleY) */}
+      <g
+        transform={`translate(0, -6) scale(1, ${blink ? 0.14 : 1})`}
+        style={{transformOrigin: '0px 0px'}}
+      >
+        <ellipse cx={-15} cy={0} rx={3.8} ry={4.8} fill={COLORS.navy} />
+        <ellipse cx={14} cy={0} rx={3.8} ry={4.8} fill={COLORS.navy} />
+      </g>
+
+      {/* Playful Open Doodles hook nose */}
+      <path
+        d="M -3 -4 C -7 4, -8 10, -1 12"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeLinecap={STROKE.lineCap}
+      />
+
+      {/* Mouth */}
+      {expression === 'happy' ? (
+        <path
+          d="M -12 18 C -4 28, 12 27, 18 17"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinecap={STROKE.lineCap}
+        />
+      ) : (
+        <path
+          d="M -10 20 C -2 23, 8 22, 13 18"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinecap={STROKE.lineCap}
+        />
+      )}
+    </g>
+  );
+
+  if (view === 'call') {
+    const handLift = callGestureProgress * -36;
+    const handRot = callGestureProgress * -16;
+
+    return (
+      <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+        {/* Oversized violet sweatshirt bust inside video call */}
+        <path
+          d="M -86 110 C -84 44, -66 -12, -26 -24 L 34 -24 C 74 -12, 92 44, 96 110 Z"
+          fill={COLORS.violet}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinecap={STROKE.lineCap}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+        {/* Crewneck ribbed collar */}
+        <path
+          d="M -26 -24 C -14 -4, 18 -4, 34 -24"
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinecap={STROKE.lineCap}
+        />
+        <path
+          d="M -32 -16 C -14 4, 22 4, 40 -16"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap={STROKE.lineCap}
+        />
+        {/* Loose sweatshirt fold strokes */}
+        <path
+          d="M -46 32 C -38 56, -34 76, -36 96"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap={STROKE.lineCap}
+        />
+        <path
+          d="M 52 34 C 46 58, 44 76, 48 96"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap={STROKE.lineCap}
+        />
+
+        {/* Head */}
+        <g transform="translate(0, 42)">{renderHead()}</g>
+
+        {/* Friendly hand gesture inside call */}
+        {callGestureProgress > 0.02 && (
+          <g
+            transform={`translate(-62, ${78 + handLift}) rotate(${handRot})`}
+            opacity={Math.min(1, callGestureProgress * 2.2)}
+          >
+            {/* Violet sleeve cuff */}
+            <path
+              d="M -18 28 L -14 4 C -10 -4, 14 -2, 16 6 L 12 32 Z"
+              fill={COLORS.violet}
+              stroke={COLORS.navy}
+              strokeWidth={STROKE.detail}
+              strokeLinecap={STROKE.lineCap}
+              strokeLinejoin={STROKE.lineJoin}
+            />
+            {/* Hand */}
+            <path
+              d="M -10 2 C -14 -12, -8 -24, -1 -24 C 4 -24, 6 -14, 6 -12 C 9 -20, 16 -18, 15 -8 C 19 -12, 23 -6, 18 4 C 14 12, -2 12, -10 2 Z"
+              fill={COLORS.paper}
+              stroke={COLORS.navy}
+              strokeWidth={STROKE.detail}
+              strokeLinecap={STROKE.lineCap}
+              strokeLinejoin={STROKE.lineJoin}
+            />
+            {/* Sketchy gesture motion arcs */}
+            <path
+              d="M -22 -14 C -26 -22, -22 -30, -16 -34"
+              fill="none"
+              stroke={COLORS.navy}
+              strokeWidth={STROKE.fine}
+              strokeLinecap={STROKE.lineCap}
+            />
+            <path
+              d="M 24 -20 C 30 -16, 32 -8, 28 0"
+              fill="none"
+              stroke={COLORS.navy}
+              strokeWidth={STROKE.fine}
+              strokeLinecap={STROKE.lineCap}
+            />
+          </g>
+        )}
+      </g>
+    );
+  }
+
+  // Desk medium shot view
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      {/* Left arm (viewer's right side, relaxed at desk edge) */}
+      <g
+        transform={`translate(78, 24) rotate(${leftShoulderAngle})`}
+        style={{transformOrigin: '0px 0px'}}
+      >
+        <path
+          d="M -14 -10 C 26 6, 46 58, 38 112 C 32 134, 4 146, -24 142 C -34 140, -34 114, -22 108 C -6 100, 6 78, -6 40 Z"
+          fill={COLORS.violet}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinecap={STROKE.lineCap}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+        {/* Ribbed cuff */}
+        <path
+          d="M -22 108 C -10 112, 4 118, 12 136"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinecap={STROKE.lineCap}
+        />
+        {/* Resting hand */}
+        <path
+          d="M -28 118 C -48 118, -56 132, -46 142 C -36 150, -18 144, -22 130 Z"
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinecap={STROKE.lineCap}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+      </g>
+
+      {/* Oversized violet sweatshirt torso */}
+      <path
+        d="M -88 18 C -72 -6, -42 -16, -24 -18 L 32 -18 C 58 -14, 84 4, 96 34 L 106 168 L -98 168 C -98 112, -96 56, -88 18 Z"
+        fill={COLORS.violet}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap={STROKE.lineCap}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+      {/* Sweatshirt crewneck */}
+      <path
+        d="M -24 -18 C -10 4, 22 4, 34 -18"
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap={STROKE.lineCap}
+      />
+      <path
+        d="M -32 -10 C -12 14, 26 14, 42 -10"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.fine}
+        strokeLinecap={STROKE.lineCap}
+      />
+      {/* Loose sweatshirt folds */}
+      <path
+        d="M -42 64 C -26 88, -24 118, -30 144"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeLinecap={STROKE.lineCap}
+      />
+      <path
+        d="M 46 58 C 38 92, 40 122, 48 148"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeLinecap={STROKE.lineCap}
+      />
+
+      {/* Head */}
+      {renderHead()}
+
+      {/* Right arm (viewer's left side - rigged shoulder + elbow for trackpad & phone lift) */}
+      <g
+        transform={`translate(-72, 22) rotate(${rightShoulderAngle})`}
+        style={{transformOrigin: '0px 0px'}}
+      >
+        {/* Oversized upper sleeve */}
+        <path
+          d="M 10 -14 C -24 -6, -54 44, -56 96 C -58 114, -20 120, -12 102 C -4 80, 14 42, 24 10 Z"
+          fill={COLORS.violet}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinecap={STROKE.lineCap}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+        {/* Sleeve crease */}
+        <path
+          d="M -18 52 C -24 68, -24 82, -16 94"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap={STROKE.lineCap}
+        />
+
+        {/* Elbow pivot */}
+        <g
+          transform={`translate(-35, 108) rotate(${rightElbowAngle})`}
+          style={{transformOrigin: '0px 0px'}}
+        >
+          {/* Oversized forearm sleeve */}
+          <path
+            d="M 14 -14 C -20 -18, -64 -10, -88 2 C -96 8, -90 34, -76 34 C -44 34, -6 26, 18 14 Z"
+            fill={COLORS.violet}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.main}
+            strokeLinecap={STROKE.lineCap}
+            strokeLinejoin={STROKE.lineJoin}
+          />
+          {/* Ribbed wrist cuff */}
+          <path
+            d="M -78 2 C -74 12, -72 24, -74 33"
+            fill="none"
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+            strokeLinecap={STROKE.lineCap}
+          />
+          {/* Phone held in hand during pickup/call */}
+          {holdingPhone && (
+            <g transform="translate(-108, 15) rotate(-18)">
+              <PhoneDoodle x={0} y={0} scale={0.92} vibrating={false} />
+            </g>
+          )}
+          {/* Hand */}
+          <path
+            d="M -82 4 C -102 2, -118 8, -116 18 C -114 28, -94 32, -78 28 Z"
+            fill={COLORS.paper}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.main}
+            strokeLinecap={STROKE.lineCap}
+            strokeLinejoin={STROKE.lineJoin}
+          />
+        </g>
+      </g>
+    </g>
+  );
+};
+7. src/characters/Teammate.tsx
+Tsx
+import React from 'react';
+import {COLORS, STROKE} from '../theme';
+
+export interface TeammateProps {
+  view: 'ots' | 'overheadHand';
+  headTilt?: number;
+  x?: number;
+  y?: number;
+  scale?: number;
+}
+
+/**
+ * Single-source parametric SVG rig for the TechStack Sydney Teammate.
+ * Visual identity: Short tousled wavy navy hair, oversized indigo sweatshirt
+ * (#3B42B8) with ribbed cuffs and loose navy ink linework.
+ */
+export const Teammate: React.FC<TeammateProps> = ({
+  view,
+  headTilt = 0,
+  x = 0,
+  y = 0,
+  scale = 1,
+}) => {
+  if (view === 'overheadHand') {
+    return (
+      <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+        {/* Hand reaching upward from lower edge to slide violet page card */}
+        <path
+          d="M -26 64 C -32 32, -34 6, -24 -12 C -18 -22, -8 -20, -6 -6 C -4 -22, 8 -24, 12 -8 C 16 -20, 26 -16, 26 2 C 30 -6, 38 2, 34 22 C 30 42, 24 58, 16 68 Z"
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinecap={STROKE.lineCap}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+        {/* Subtle knuckle lines */}
+        <path
+          d="M -6 -2 L -4 14 M 11 -4 L 12 12 M 24 4 L 22 18"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap={STROKE.lineCap}
+        />
+        {/* Oversized indigo sweatshirt sleeve entering from bottom edge */}
+        <path
+          d="M -54 240 L -42 74 C -40 54, 34 52, 42 72 L 74 240 Z"
+          fill={COLORS.indigo}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinecap={STROKE.lineCap}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+        {/* Ribbed cuff */}
+        <path
+          d="M -42 84 C -16 74, 16 74, 42 84"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinecap={STROKE.lineCap}
+        />
+        <path
+          d="M -24 78 L -24 62 M -4 76 L -4 59 M 16 77 L 17 60"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap={STROKE.lineCap}
+        />
+        {/* Loose indigo sleeve folds */}
+        <path
+          d="M -18 124 C -10 156, -12 188, -18 220 M 20 116 C 14 152, 18 186, 26 220"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinecap={STROKE.lineCap}
+        />
+      </g>
+    );
+  }
+
+  // Over-the-shoulder back-3/4 view (Scene 2)
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      {/* Left arm extending forward onto desk toward laptop */}
+      <path
+        d="M -86 92 C -144 108, -192 146, -214 198 L -144 218 C -118 176, -84 154, -46 146 Z"
+        fill={COLORS.indigo}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap={STROKE.lineCap}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+
+      {/* Broad oversized indigo sweatshirt shoulders & back */}
+      <path
+        d="M -138 290 C -142 184, -126 98, -72 68 L 88 58 C 148 74, 178 154, 174 290 Z"
+        fill={COLORS.indigo}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap={STROKE.lineCap}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+      {/* Crewneck back collar */}
+      <path
+        d="M -44 64 C -14 82, 46 80, 74 58"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap={STROKE.lineCap}
+      />
+      <path
+        d="M -54 74 C -18 96, 52 94, 84 68"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.fine}
+        strokeLinecap={STROKE.lineCap}
+      />
+      {/* Minimal doodle sweatshirt creases */}
+      <path
+        d="M -68 134 C -48 168, -44 212, -52 254 M 74 128 C 64 170, 68 216, 82 260"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeLinecap={STROKE.lineCap}
+      />
+
+      {/* Head & neck (rigged for subtle nod) */}
+      <g
+        transform={`translate(6, 58) rotate(${headTilt})`}
+        style={{transformOrigin: '0px 10px'}}
+      >
+        {/* Neck */}
+        <path
+          d="M -32 14 L -34 -36 L 24 -34 L 26 14 C 6 22, -18 22, -32 14 Z"
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinecap={STROKE.lineCap}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+        {/* Left cheek/jawline profile */}
+        <path
+          d="M -52 -64 C -62 -44, -56 -16, -34 -8 C -10 0, 28 -10, 42 -42 C 52 -74, 34 -128, -12 -128 C -52 -128, -58 -92, -52 -64 Z"
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinecap={STROKE.lineCap}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+        {/* Short wavy navy hair covering back & crown */}
+        <path
+          d="M -54 -76 C -64 -92, -52 -120, -28 -128 C -8 -142, 34 -138, 52 -110 C 66 -86, 62 -38, 36 -18 C 12 0, -14 -8, -18 -28 C -22 -46, -24 -64, -40 -70 Z"
+          fill={COLORS.navy}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinecap={STROKE.lineCap}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+        {/* Ear visible at side */}
+        <path
+          d="M -22 -52 C -34 -56, -36 -34, -20 -30"
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinecap={STROKE.lineCap}
+        />
+        {/* Loose hair wave highlight lines */}
+        <path
+          d="M -12 -114 C 10 -120, 28 -108, 32 -92 M 16 -84 C 34 -78, 42 -58, 34 -42"
+          fill="none"
+          stroke={COLORS.paper}
+          strokeWidth={STROKE.fine}
+          strokeLinecap={STROKE.lineCap}
+        />
+      </g>
+    </g>
+  );
+};
+8. src/components/WebsiteLayout.tsx
+Tsx
+import React from 'react';
+import {COLORS, STROKE, clampedInterpolate} from '../theme';
+
+export interface WebsiteLayoutProps {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** 0 = pure wireframe, 1 = fully coloured finished website preview */
+  fillProgress: number;
+  showLivePulse?: boolean;
+  pulseScale?: number;
+}
+
+/**
+ * Single-source website layout shared across:
+ * - Overhead wireframe match cut (Scene 4A, fillProgress = 0)
+ * - Teammate laptop close-up build (Scene 4B, fillProgress = 0 -> 1)
+ * - Owner laptop close-up match cut & launch (Scene 5A, fillProgress = 1)
+ * - Owner desk medium shot final laptop screen (Scene 5B, fillProgress = 1)
+ * Contains zero text, letters, numbers, or logos.
+ */
+export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({
+  x,
+  y,
+  width,
+  height,
+  fillProgress,
+  showLivePulse = false,
+  pulseScale = 0,
+}) => {
+  const headerFill = clampedInterpolate(fillProgress, [0.05, 0.3], [0, 1]);
+  const heroFill = clampedInterpolate(fillProgress, [0.25, 0.6], [0, 1]);
+  const ctaFill = clampedInterpolate(fillProgress, [0.45, 0.78], [0, 1]);
+  const cardsFill = clampedInterpolate(fillProgress, [0.6, 0.95], [0, 1]);
+
+  // Normalized coordinates inside a 700x490 design space scaled cleanly to width/height
+  const sx = width / 700;
+  const sy = height / 490;
+  const sw = STROKE.detail / Math.max(0.35, Math.min(sx, sy));
+
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${sx}, ${sy})`}>
+      {/* Outer page surface */}
+      <rect
+        x={0}
+        y={0}
+        width={700}
+        height={490}
+        rx={18}
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={sw}
+      />
+
+      {/* Top browser bar */}
+      <path
+        d="M 0 18 C 0 8, 8 0, 18 0 L 682 0 C 692 0, 700 8, 700 18 L 700 54 L 0 54 Z"
+        fill={COLORS.navyTint}
+        opacity={headerFill}
+      />
+      <line
+        x1={0}
+        y1={54}
+        x2={700}
+        y2={54}
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.85}
+      />
+
+      {/* Window dots */}
+      <circle
+        cx={28}
+        cy={27}
+        r={7}
+        fill={headerFill > 0.3 ? COLORS.navy : COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.7}
+      />
+      <circle
+        cx={52}
+        cy={27}
+        r={7}
+        fill={headerFill > 0.5 ? COLORS.indigo : COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.7}
+      />
+      <circle
+        cx={76}
+        cy={27}
+        r={7}
+        fill={headerFill > 0.7 ? COLORS.violet : COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.7}
+      />
+
+      {/* Abstract URL pill (no text) */}
+      <rect
+        x={160}
+        y={14}
+        width={380}
+        height={26}
+        rx={13}
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.75}
+      />
+
+      {/* Live indicator ring on top-right when launched */}
+      {showLivePulse && (
+        <g transform="translate(658, 27)">
+          <circle
+            cx={0}
+            cy={0}
+            r={8 + pulseScale * 8}
+            fill="none"
+            stroke={COLORS.violet}
+            strokeWidth={sw * 0.7}
+            opacity={1 - pulseScale * 0.75}
+          />
+          <circle cx={0} cy={0} r={7} fill={COLORS.violet} />
+        </g>
+      )}
+
+      {/* Navigation bar */}
+      <rect
+        x={38}
+        y={74}
+        width={68}
+        height={20}
+        rx={10}
+        fill={COLORS.indigo}
+        opacity={headerFill}
+      />
+      <rect
+        x={38}
+        y={74}
+        width={68}
+        height={20}
+        rx={10}
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.75}
+      />
+      {/* Nav strokes */}
+      <line
+        x1={440}
+        y1={84}
+        x2={495}
+        y2={84}
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.85}
+        strokeLinecap="round"
+      />
+      <line
+        x1={520}
+        y1={84}
+        x2={575}
+        y2={84}
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.85}
+        strokeLinecap="round"
+      />
+      <rect
+        x={598}
+        y={73}
+        width={64}
+        height={22}
+        rx={11}
+        fill={COLORS.violet}
+        opacity={headerFill}
+      />
+      <rect
+        x={598}
+        y={73}
+        width={64}
+        height={22}
+        rx={11}
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.75}
+      />
+
+      {/* Hero Section: Left abstract copy strokes + CTA */}
+      <rect
+        x={42}
+        y={136}
+        width={255}
+        height={22}
+        rx={11}
+        fill={COLORS.navy}
+        opacity={heroFill}
+      />
+      <rect
+        x={42}
+        y={136}
+        width={255}
+        height={22}
+        rx={11}
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.8}
+      />
+
+      <rect
+        x={42}
+        y={170}
+        width={210}
+        height={20}
+        rx={10}
+        fill={COLORS.indigo}
+        opacity={heroFill}
+      />
+      <rect
+        x={42}
+        y={170}
+        width={210}
+        height={20}
+        rx={10}
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.8}
+      />
+
+      {/* Sub-lines */}
+      <line
+        x1={44}
+        y1={214}
+        x2={274}
+        y2={214}
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.8}
+        strokeLinecap="round"
+      />
+      <line
+        x1={44}
+        y1={234}
+        x2={232}
+        y2={234}
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.8}
+        strokeLinecap="round"
+      />
+
+      {/* Hero CTA pill */}
+      <rect
+        x={42}
+        y={260}
+        width={136}
+        height={38}
+        rx={19}
+        fill={COLORS.violet}
+        opacity={ctaFill}
+      />
+      <rect
+        x={42}
+        y={260}
+        width={136}
+        height={38}
+        rx={19}
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.85}
+      />
+
+      {/* Hero Section: Right visual block */}
+      <rect
+        x={344}
+        y={122}
+        width={316}
+        height={186}
+        rx={20}
+        fill={COLORS.violetSoft}
+        opacity={heroFill}
+      />
+      <rect
+        x={344}
+        y={122}
+        width={316}
+        height={186}
+        rx={20}
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.9}
+      />
+      {/* Abstract graphic inside hero card (no text) */}
+      <circle
+        cx={436}
+        cy={192}
+        r={34}
+        fill={COLORS.violet}
+        opacity={heroFill}
+      />
+      <circle
+        cx={436}
+        cy={192}
+        r={34}
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.8}
+      />
+      <path
+        d="M 380 284 C 414 236, 464 236, 496 276 C 520 242, 568 232, 616 284 Z"
+        fill={COLORS.indigo}
+        opacity={heroFill}
+      />
+      <path
+        d="M 380 284 C 414 236, 464 236, 496 276 C 520 242, 568 232, 616 284 Z"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={sw * 0.8}
+        strokeLinejoin="round"
+      />
+
+      {/* Bottom 3 feature cards */}
+      {[0, 1, 2].map((idx) => {
+        const cx = 42 + idx * 212;
+        const cardColor =
+          idx === 0
+            ? COLORS.navyTint
+            : idx === 1
+            ? COLORS.indigoSoft
+            : COLORS.violetSoft;
+        const badgeColor =
+          idx === 0
+            ? COLORS.navy
+            : idx === 1
+            ? COLORS.indigo
+            : COLORS.violet;
+        return (
+          <g key={idx}>
+            <rect
+              x={cx}
+              y={334}
+              width={194}
+              height={126}
+              rx={16}
+              fill={cardColor}
+              opacity={cardsFill}
+            />
+            <rect
+              x={cx}
+              y={334}
+              width={194}
+              height={126}
+              rx={16}
+              fill="none"
+              stroke={COLORS.navy}
+              strokeWidth={sw * 0.85}
+            />
+            <circle
+              cx={cx + 34}
+              cy={368}
+              r={15}
+              fill={badgeColor}
+              opacity={cardsFill}
+            />
+            <circle
+              cx={cx + 34}
+              cy={368}
+              r={15}
+              fill="none"
+              stroke={COLORS.navy}
+              strokeWidth={sw * 0.75}
+            />
+            <line
+              x1={cx + 22}
+              y1={404}
+              x2={cx + 158}
+              y2={404}
+              stroke={COLORS.navy}
+              strokeWidth={sw * 0.85}
+              strokeLinecap="round"
+            />
+            <line
+              x1={cx + 22}
+              y1={426}
+              x2={cx + 122}
+              y2={426}
+              stroke={COLORS.navy}
+              strokeWidth={sw * 0.75}
+              strokeLinecap="round"
+            />
+          </g>
+        );
+      })}
+    </g>
+  );
+};
+9. src/components/DoodleProps.tsx
+Tsx
+import React from 'react';
+import {COLORS, STROKE} from '../theme';
+
+export const PhoneDoodle: React.FC<{
+  x: number;
+  y: number;
+  scale?: number;
+  vibrating?: boolean;
+  vibrationPhase?: number;
+}> = ({x, y, scale = 1, vibrating = false, vibrationPhase = 0}) => {
+  const wiggle = vibrating ? Math.sin(vibrationPhase) * 6 : 0;
+  return (
+    <g transform={`translate(${x}, ${y}) rotate(${wiggle}) scale(${scale})`}>
+      <rect
+        x={-16}
+        y={-28}
+        width={32}
+        height={56}
+        rx={7}
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+      <rect
+        x={-11}
+        y={-20}
+        width={22}
+        height={36}
+        rx={3}
+        fill={COLORS.violetSoft}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.fine}
+      />
+      <line
+        x1={-4}
+        y1={-24}
+        x2={4}
+        y2={-24}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.fine}
+        strokeLinecap="round"
+      />
+      <circle cx={0} cy={21} r={2.2} fill={COLORS.navy} />
+
+      {vibrating && (
+        <g>
+          <path
+            d="M -26 -16 C -32 -6, -32 6, -26 16"
+            fill="none"
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+            strokeLinecap="round"
+          />
+          <path
+            d="M -34 -10 C -39 -3, -39 3, -34 10"
+            fill="none"
+            stroke={COLORS.violet}
+            strokeWidth={STROKE.detail}
+            strokeLinecap="round"
+          />
+          <path
+            d="M 26 -16 C 32 -6, 32 6, 26 16"
+            fill="none"
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+            strokeLinecap="round"
+          />
+          <path
+            d="M 34 -10 C 39 -3, 39 3, 34 10"
+            fill="none"
+            stroke={COLORS.violet}
+            strokeWidth={STROKE.detail}
+            strokeLinecap="round"
+          />
+        </g>
+      )}
+    </g>
+  );
+};
+
+export const PaperPlaneDoodle: React.FC<{
+  x: number;
+  y: number;
+  scale?: number;
+  opacity?: number;
+  trailProgress?: number;
+}> = ({x, y, scale = 1, opacity = 1, trailProgress = 1}) => {
+  return (
+    <g opacity={opacity}>
+      {/* Dotted flight trail */}
+      <path
+        d={`M ${x - 62} ${y + 42} Q ${x - 30} ${y + 18} ${x - 10} ${y + 6}`}
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeLinecap="round"
+        strokeDasharray="6 10"
+        strokeDashoffset={40 * (1 - trailProgress)}
+      />
+      <g transform={`translate(${x}, ${y}) rotate(-18) scale(${scale})`}>
+        <path
+          d="M -26 6 L 28 -14 L -6 20 L -12 4 Z"
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        <path
+          d="M -12 4 L 28 -14 L -2 12 Z"
+          fill={COLORS.violetSoft}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinejoin="round"
+        />
+      </g>
+    </g>
+  );
+};
+
+export const VioletCheckBadge: React.FC<{
+  x: number;
+  y: number;
+  popScale: number;
+  tickProgress: number;
+  size?: number;
+}> = ({x, y, popScale, tickProgress, size = 1}) => {
+  if (popScale <= 0.01) return null;
+  const tickLen = 46;
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${popScale * size})`}>
+      <circle
+        cx={0}
+        cy={0}
+        r={28}
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+      />
+      <circle cx={0} cy={0} r={22} fill={COLORS.violetSoft} />
+      <path
+        d="M -11 1 L -3 10 L 13 -10"
+        fill="none"
+        stroke={COLORS.violet}
+        strokeWidth={6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeDasharray={tickLen}
+        strokeDashoffset={tickLen * (1 - tickProgress)}
+      />
+    </g>
+  );
+};
+
+export const GlobeDoodle: React.FC<{
+  x: number;
+  y: number;
+  scale: number;
+}> = ({x, y, scale}) => {
+  if (scale <= 0.01) return null;
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      <circle
+        cx={0}
+        cy={0}
+        r={34}
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+      />
+      <ellipse
+        cx={0}
+        cy={0}
+        rx={16}
+        ry={34}
+        fill="none"
+        stroke={COLORS.indigo}
+        strokeWidth={STROKE.detail}
+      />
+      <line
+        x1={-33}
+        y1={0}
+        x2={33}
+        y2={0}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+      />
+      <path
+        d="M -27 -16 C -10 -12, 10 -12, 27 -16"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.fine}
+      />
+      <path
+        d="M -27 16 C -10 12, 10 12, 27 16"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.fine}
+      />
+    </g>
+  );
+};
+
+export const CloudDoodle: React.FC<{
+  x: number;
+  y: number;
+  scale: number;
+}> = ({x, y, scale}) => {
+  if (scale <= 0.01) return null;
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      <path
+        d="M -32 16 C -44 16, -48 -4, -32 -10 C -30 -28, -4 -34, 8 -18 C 20 -26, 40 -14, 34 4 C 46 8, 42 24, 26 24 L -26 24 C -36 24, -40 16, -32 16 Z"
+        fill={COLORS.indigoSoft}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {/* Up/down sync arrows doodle */}
+      <path
+        d="M -10 8 L -10 -4 M -15 1 L -10 -4 L -5 1"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.fine}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M 10 -4 L 10 8 M 5 3 L 10 8 L 15 3"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.fine}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </g>
+  );
+};
+
+/**
+ * The single small multicoloured spark allowed at launch (18-20s).
+ */
+export const LaunchSpark: React.FC<{
+  x: number;
+  y: number;
+  progress: number;
+  scale?: number;
+}> = ({x, y, progress, scale = 1}) => {
+  if (progress <= 0.01) return null;
+  const burst = Math.min(1, progress * 1.4);
+  const rays = [
+    {angle: -90, color: COLORS.sparkCoral, len: 20},
+    {angle: -35, color: COLORS.sparkAmber, len: 17},
+    {angle: 20, color: COLORS.sparkMint, len: 18},
+    {angle: 145, color: COLORS.sparkSky, len: 16},
+    {angle: -145, color: COLORS.sparkViolet, len: 18},
+  ];
+
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      {/* Center 4-point star */}
+      <path
+        d="M 0 -13 C 2 -4, 4 -2, 13 0 C 4 2, 2 4, 0 13 C -2 4, -4 2, -13 0 C -4 -2, -2 -4, 0 -13 Z"
+        fill={COLORS.sparkAmber}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.fine}
+        strokeLinejoin="round"
+        transform={`scale(${0.6 + burst * 0.4})`}
+      />
+      {/* Multicoloured radial doodle sparks */}
+      {rays.map((ray, i) => {
+        const rad = (ray.angle * Math.PI) / 180;
+        const r1 = 16 + burst * 6;
+        const r2 = r1 + ray.len * burst;
+        return (
+          <g key={i}>
+            <line
+              x1={Math.cos(rad) * r1}
+              y1={Math.sin(rad) * r1}
+              x2={Math.cos(rad) * r2}
+              y2={Math.sin(rad) * r2}
+              stroke={ray.color}
+              strokeWidth={4.2}
+              strokeLinecap="round"
+            />
+            <circle
+              cx={Math.cos(rad + 0.18) * (r2 + 8)}
+              cy={Math.sin(rad + 0.18) * (r2 + 8)}
+              r={2.8 * burst}
+              fill={ray.color}
+            />
+          </g>
+        );
+      })}
+    </g>
+  );
+};
+10. src/scenes/OwnerDeskScene.tsx
+Tsx
+import React from 'react';
+import {Owner} from '../characters/Owner';
+import {
+  LaunchSpark,
+  PaperPlaneDoodle,
+  PhoneDoodle,
+} from '../components/DoodleProps';
+import {WebsiteLayout} from '../components/WebsiteLayout';
+import {COLORS, STROKE} from '../theme';
+
+export interface OwnerDeskSceneProps {
+  mode: 'enquiry' | 'launch';
+  expression: 'neutral' | 'happy';
+  blink: boolean;
+  headTilt: number;
+  rightShoulderAngle: number;
+  rightElbowAngle: number;
+  leftShoulderAngle: number;
+  holdingPhone: boolean;
+  phoneOnDesk: boolean;
+  phoneVibrating: boolean;
+  vibrationPhase: number;
+  tapRippleProgress: number;
+  paperPlaneProgress: number;
+  sparkProgress: number;
+}
+
+/**
+ * Shared exact camera framing (front-left medium shot on right half of canvas)
+ * used by Scene 1 (0-4s) and Scene 5B (19-20s) to guarantee zero camera drift.
+ */
+export const OwnerDeskScene: React.FC<OwnerDeskSceneProps> = ({
+  mode,
+  expression,
+  blink,
+  headTilt,
+  rightShoulderAngle,
+  rightElbowAngle,
+  leftShoulderAngle,
+  holdingPhone,
+  phoneOnDesk,
+  phoneVibrating,
+  vibrationPhase,
+  tapRippleProgress,
+  paperPlaneProgress,
+  sparkProgress,
+}) => {
+  const planeOpacity =
+    paperPlaneProgress <= 0 || paperPlaneProgress >= 1
+      ? 0
+      : paperPlaneProgress < 0.2
+      ? paperPlaneProgress * 5
+      : paperPlaneProgress > 0.8
+      ? (1 - paperPlaneProgress) * 5
+      : 1;
+
+  return (
+    <svg
+      width={1920}
+      height={1080}
+      viewBox="0 0 1920 1080"
+      style={{display: 'block', backgroundColor: COLORS.bg}}
+    >
+      {/* Subtle doodle chair back behind owner */}
+      <path
+        d="M 1595 510 C 1650 512, 1680 564, 1672 680"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap={STROKE.lineCap}
+      />
+
+      {/* Owner seated behind desk */}
+      <Owner
+        view="desk"
+        x={1545}
+        y={515}
+        expression={expression}
+        blink={blink}
+        headTilt={headTilt}
+        rightShoulderAngle={rightShoulderAngle}
+        rightElbowAngle={rightElbowAngle}
+        leftShoulderAngle={leftShoulderAngle}
+        holdingPhone={holdingPhone}
+      />
+
+      {/* Desk surface (strictly on right half: x >= 995) */}
+      <path
+        d="M 995 724 L 1872 690 L 1872 722 L 995 758 Z"
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+      {/* Desk front shadow strip & legs */}
+      <path
+        d="M 1040 758 L 1040 940 M 1815 724 L 1815 940"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap={STROKE.lineCap}
+      />
+      {/* Subtle white mask below desk top edge for clean overlapping */}
+      <path
+        d="M 995 724 L 1872 690 L 1872 720 L 995 754 Z"
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+
+      {/* Angled 3/4 Laptop on left-front of owner's desk */}
+      <g>
+        {/* Laptop base / keyboard deck */}
+        <path
+          d="M 1054 714 L 1226 672 L 1326 694 L 1144 742 Z"
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+        {/* Trackpad area */}
+        <path
+          d="M 1212 698 L 1254 688 L 1278 694 L 1234 706 Z"
+          fill={COLORS.navyTint}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+        {/* Keyboard lines */}
+        <path
+          d="M 1118 708 L 1212 684 M 1138 714 L 1232 690"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap="round"
+        />
+
+        {/* Laptop lid / tilted screen facing camera & owner */}
+        <path
+          d="M 1048 532 L 1224 494 L 1238 666 L 1062 708 Z"
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+
+        {/* Screen content */}
+        {mode === 'enquiry' ? (
+          <g transform="translate(1062, 540) skewY(-12) scale(0.228, 0.305)">
+            {/* Abstract enquiry form on laptop screen */}
+            <rect
+              x={0}
+              y={0}
+              width={700}
+              height={490}
+              rx={16}
+              fill={COLORS.paper}
+              stroke={COLORS.navy}
+              strokeWidth={10}
+            />
+            <rect
+              x={60}
+              y={60}
+              width={280}
+              height={34}
+              rx={17}
+              fill={COLORS.indigoSoft}
+              stroke={COLORS.navy}
+              strokeWidth={8}
+            />
+            <rect
+              x={60}
+              y={135}
+              width={580}
+              height={54}
+              rx={12}
+              fill={COLORS.navyTint}
+              stroke={COLORS.navy}
+              strokeWidth={8}
+            />
+            <rect
+              x={60}
+              y={215}
+              width={580}
+              height={54}
+              rx={12}
+              fill={COLORS.navyTint}
+              stroke={COLORS.navy}
+              strokeWidth={8}
+            />
+            <rect
+              x={60}
+              y={295}
+              width={580}
+              height={76}
+              rx={12}
+              fill={COLORS.navyTint}
+              stroke={COLORS.navy}
+              strokeWidth={8}
+            />
+            <rect
+              x={430}
+              y={395}
+              width={210}
+              height={52}
+              rx={26}
+              fill={COLORS.violet}
+              stroke={COLORS.navy}
+              strokeWidth={8}
+            />
+          </g>
+        ) : (
+          <g transform="translate(1062, 540) skewY(-12) scale(0.228, 0.305)">
+            <WebsiteLayout
+              x={0}
+              y={0}
+              width={700}
+              height={490}
+              fillProgress={1}
+              showLivePulse={true}
+              pulseScale={0.25}
+            />
+          </g>
+        )}
+      </g>
+
+      {/* Trackpad tap doodle ripple */}
+      {tapRippleProgress > 0 && tapRippleProgress < 1 && (
+        <g transform="translate(1248, 692)">
+          <circle
+            cx={0}
+            cy={0}
+            r={8 + tapRippleProgress * 22}
+            fill="none"
+            stroke={COLORS.violet}
+            strokeWidth={STROKE.detail}
+            opacity={1 - tapRippleProgress}
+          />
+        </g>
+      )}
+
+      {/* Paper plane rising above laptop on enquiry send */}
+      {planeOpacity > 0.01 && (
+        <PaperPlaneDoodle
+          x={1180 + paperPlaneProgress * 125}
+          y={490 - paperPlaneProgress * 95}
+          scale={0.95}
+          opacity={planeOpacity}
+          trailProgress={paperPlaneProgress}
+        />
+      )}
+
+      {/* Phone resting on desk beside laptop */}
+      {phoneOnDesk && (
+        <PhoneDoodle
+          x={1346}
+          y={672}
+          scale={0.92}
+          vibrating={phoneVibrating}
+          vibrationPhase={vibrationPhase}
+        />
+      )}
+
+      {/* Small coffee mug doodle at far right of desk */}
+      <g transform="translate(1748, 668)">
+        <path
+          d="M -18 -18 L 18 -18 L 15 20 C 14 26, -14 26, -15 20 Z"
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinejoin="round"
+        />
+        <path
+          d="M 17 -10 C 30 -10, 30 10, 16 10"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinecap="round"
+        />
+      </g>
+
+      {/* Residual launch spark above finished website in 19-20s shot */}
+      {mode === 'launch' && sparkProgress > 0.01 && (
+        <LaunchSpark x={1232} y={468} progress={sparkProgress} scale={0.78} />
+      )}
+    </svg>
+  );
+};
+11. src/scenes/Scene1Enquiry.tsx
+Tsx
+import React from 'react';
+import {useCurrentFrame} from 'remotion';
+import {clampedInterpolate} from '../theme';
+import {OwnerDeskScene} from './OwnerDeskScene';
+
+/**
+ * Scene 1 (0–4s | Frames 0–119): Enquiry and first call.
+ * - Owner taps trackpad -> paper-plane icon appears above laptop
+ * - Phone buzzes on desk -> owner lifts phone to ear and smiles
+ */
+export const Scene1Enquiry: React.FC = () => {
+  const frame = useCurrentFrame();
+
+  // Subtle deterministic blink around f 38-42
+  const blink = frame >= 38 && frame <= 42;
+
+  // Tap trackpad around f 10-24
+  const tapDown = clampedInterpolate(frame, [6, 14], [0, 1]);
+  const tapUp = clampedInterpolate(frame, [14, 24], [0, 1]);
+  const tapMotion = tapDown - tapUp;
+  const tapRippleProgress = clampedInterpolate(frame, [13, 30], [0, 1]);
+
+  // Paper plane floats up f 18-56
+  const paperPlaneProgress = clampedInterpolate(frame, [18, 56], [0, 1]);
+
+  // Phone buzzes f 58-84
+  const phoneVibrating = frame >= 58 && frame <= 83;
+  const vibrationPhase = frame * 1.35;
+
+  // Hand reaches from trackpad (f 70-82) to phone, then lifts phone to ear (f 82-108)
+  const reachPhone = clampedInterpolate(frame, [70, 82], [0, 1]);
+  const liftToEar = clampedInterpolate(frame, [82, 108], [0, 1]);
+
+  // Smoothly blend shoulder & elbow angles using FK math matching Owner rig
+  const rightShoulderAngle =
+    10 * (1 - reachPhone) - tapMotion * 4 + liftToEar * 78;
+  const rightElbowAngle =
+    -10 * (1 - reachPhone) + tapMotion * 7 + liftToEar * 62;
+
+  const holdingPhone = frame >= 82;
+  const phoneOnDesk = frame < 82;
+
+  // Owner smiles warmly as phone arrives at ear (f 92+)
+  const expression = frame >= 92 ? 'happy' : 'neutral';
+  const headTilt = clampedInterpolate(frame, [88, 108], [0, -5]);
+
+  return (
+    <OwnerDeskScene
+      mode="enquiry"
+      expression={expression}
+      blink={blink}
+      headTilt={headTilt}
+      rightShoulderAngle={rightShoulderAngle}
+      rightElbowAngle={rightElbowAngle}
+      leftShoulderAngle={0}
+      holdingPhone={holdingPhone}
+      phoneOnDesk={phoneOnDesk}
+      phoneVibrating={phoneVibrating}
+      vibrationPhase={vibrationPhase}
+      tapRippleProgress={tapRippleProgress}
+      paperPlaneProgress={paperPlaneProgress}
+      sparkProgress={0}
+    />
+  );
+};
+12. src/scenes/Scene2Discovery.tsx
+Tsx
+import React from 'react';
+import {spring, useCurrentFrame, useVideoConfig} from 'remotion';
+import {Owner} from '../characters/Owner';
+import {Teammate} from '../characters/Teammate';
+import {COLORS, SPRING_PRESETS, STROKE, clampedInterpolate} from '../theme';
+
+/**
+ * Scene 2 (4–8s | Frames 120–239, local 0–119): Teams discovery and service agreement.
+ * - Hard cut from owner smiling on phone to same owner smiling on teammate's laptop
+ * - Owner makes one small hand gesture; teammate nods
+ * - Simple agreement icon appears beside call, violet tick draws onto it
+ */
+export const Scene2Discovery: React.FC = () => {
+  const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
+
+  // Owner gesture on call (f 18-52)
+  const gestureUp = clampedInterpolate(frame, [18, 32], [0, 1]);
+  const gestureDown = clampedInterpolate(frame, [38, 52], [0, 1]);
+  const callGestureProgress = Math.max(0, gestureUp - gestureDown);
+
+  // Teammate nod (f 44-74)
+  const nodDown = clampedInterpolate(frame, [44, 56], [0, 1]);
+  const nodUp = clampedInterpolate(frame, [58, 72], [0, 1]);
+  const headTilt = (nodDown - nodUp) * 8;
+
+  // Agreement card pop-in (f 62+)
+  const cardSpring = spring({
+    frame: Math.max(0, frame - 62),
+    fps,
+    config: SPRING_PRESETS.snappy,
+  });
+  const cardScale = frame < 62 ? 0 : cardSpring;
+
+  // Violet tick draw-on (f 84-106)
+  const tickProgress = clampedInterpolate(frame, [84, 106], [0, 1]);
+  const tickLen = 58;
+
+  // Owner subtle blink inside call
+  const ownerBlink = frame >= 68 && frame <= 72;
+
+  return (
+    <svg
+      width={1920}
+      height={1080}
+      viewBox="0 0 1920 1080"
+      style={{display: 'block', backgroundColor: COLORS.bg}}
+    >
+      {/* Desk plane behind laptop (right half only: x >= 1005) */}
+      <line
+        x1={1005}
+        y1={705}
+        x2={1880}
+        y2={705}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap={STROKE.lineCap}
+      />
+
+      {/* Teammate's laptop angled facing camera over shoulder */}
+      <g>
+        {/* Laptop base */}
+        <path
+          d="M 1016 616 L 1546 616 L 1598 705 L 1008 705 Z"
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+          strokeLinejoin={STROKE.lineJoin}
+        />
+        <line
+          x1={1054}
+          y1={646}
+          x2={1504}
+          y2={646}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap="round"
+        />
+        <rect
+          x={1232}
+          y={662}
+          width={92}
+          height={26}
+          rx={6}
+          fill={COLORS.navyTint}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+        />
+
+        {/* Laptop outer bezel */}
+        <rect
+          x={1016}
+          y={236}
+          width={530}
+          height={380}
+          rx={20}
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+        />
+        {/* Webcam dot */}
+        <circle cx={1281} cy={251} r={4} fill={COLORS.navy} />
+
+        {/* Inner laptop display */}
+        <rect
+          x={1038}
+          y={266}
+          width={486}
+          height={330}
+          rx={12}
+          fill={COLORS.navyTint}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+        />
+
+        {/* Video call window */}
+        <defs>
+          <clipPath id="callWindowClip">
+            <rect x={1054} y={282} width={302} height={268} rx={12} />
+          </clipPath>
+        </defs>
+        <rect
+          x={1054}
+          y={282}
+          width={302}
+          height={268}
+          rx={12}
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+        />
+
+        {/* Owner inside video call window */}
+        <g clipPath="url(#callWindowClip)">
+          <Owner
+            view="call"
+            x={1205}
+            y={452}
+            scale={0.96}
+            expression="happy"
+            blink={ownerBlink}
+            callGestureProgress={callGestureProgress}
+          />
+        </g>
+
+        {/* Video call bottom control pills (pure abstract icons, no text) */}
+        <rect
+          x={1142}
+          y={562}
+          width={128}
+          height={22}
+          rx={11}
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+        />
+        <circle cx={1172} cy={573} r={5} fill={COLORS.indigo} />
+        <circle cx={1206} cy={573} r={5} fill={COLORS.violet} />
+        <circle cx={1240} cy={573} r={5} fill={COLORS.navy} />
+
+        {/* Simple agreement icon beside the video call */}
+        {cardScale > 0.01 && (
+          <g transform={`translate(1438, 416) scale(${cardScale})`}>
+            {/* Document card with folded corner */}
+            <path
+              d="M -58 -84 L 30 -84 L 58 -56 L 58 84 L -58 84 Z"
+              fill={COLORS.paper}
+              stroke={COLORS.navy}
+              strokeWidth={STROKE.main}
+              strokeLinejoin={STROKE.lineJoin}
+            />
+            <path
+              d="M 30 -84 L 30 -56 L 58 -56"
+              fill={COLORS.navyTint}
+              stroke={COLORS.navy}
+              strokeWidth={STROKE.detail}
+              strokeLinejoin={STROKE.lineJoin}
+            />
+            {/* Abstract agreement lines (zero text) */}
+            <line
+              x1={-36}
+              y1={-46}
+              x2={14}
+              y2={-46}
+              stroke={COLORS.navy}
+              strokeWidth={STROKE.detail}
+              strokeLinecap="round"
+            />
+            <line
+              x1={-36}
+              y1={-24}
+              x2={34}
+              y2={-24}
+              stroke={COLORS.navy}
+              strokeWidth={STROKE.fine}
+              strokeLinecap="round"
+            />
+            <line
+              x1={-36}
+              y1={-6}
+              x2={28}
+              y2={-6}
+              stroke={COLORS.navy}
+              strokeWidth={STROKE.fine}
+              strokeLinecap="round"
+            />
+
+            {/* Agreement badge & violet tick */}
+            <circle
+              cx={0}
+              cy={40}
+              r={26}
+              fill={COLORS.violetSoft}
+              stroke={COLORS.navy}
+              strokeWidth={STROKE.detail}
+            />
+            <path
+              d="M -13 40 L -3 51 L 16 28"
+              fill="none"
+              stroke={COLORS.violet}
+              strokeWidth={7}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeDasharray={tickLen}
+              strokeDashoffset={tickLen * (1 - tickProgress)}
+            />
+          </g>
+        )}
+      </g>
+
+      {/* TechStack Sydney Teammate in over-the-shoulder right foreground */}
+      <Teammate view="ots" x={1690} y={560} scale={1.15} headTilt={headTilt} />
+    </svg>
+  );
+};
+13. src/scenes/Scene3ResearchSitemap.tsx
+Tsx
+import React from 'react';
+import {spring, useCurrentFrame, useVideoConfig} from 'remotion';
+import {Teammate} from '../characters/Teammate';
+import {
+  COLORS,
+  MATCH_CARD,
+  SPRING_PRESETS,
+  STROKE,
+  clampedInterpolate,
+} from '../theme';
+
+/**
+ * Scene 3 (8–12s | Frames 240–359, local 0–119): Research, sitemap and copy.
+ * - Fixed overhead shot of teammate's desk
+ * - Indigo sleeve at lower edge connects to previous shot
+ * - Two sample website research cards, branching sitemap, draft copy sheet (abstract strokes)
+ * - Slides violet page card into exact MATCH_CARD rect for 12s match cut
+ */
+export const Scene3ResearchSitemap: React.FC = () => {
+  const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
+
+  // Teammate slides the violet page card into MATCH_CARD during f 22-76
+  const slideProgress = spring({
+    frame: Math.max(0, frame - 22),
+    fps,
+    config: SPRING_PRESETS.smooth,
+  });
+  const cardOffsetY = frame < 22 ? 170 : (1 - slideProgress) * 170;
+
+  // Hand withdraws slightly down toward bottom edge once card locks (f 78-102)
+  const withdrawOffsetY = clampedInterpolate(frame, [78, 102], [0, 145]);
+
+  // Subtle magnifying glass settle & branch highlight on lock
+  const branchLock = clampedInterpolate(frame, [74, 92], [0, 1]);
+
+  return (
+    <svg
+      width={1920}
+      height={1080}
+      viewBox="0 0 1920 1080"
+      style={{display: 'block', backgroundColor: COLORS.bg}}
+    >
+      {/* Top-left/center: Two small sample website research cards */}
+      <g transform="translate(1025, 130) rotate(-3)">
+        <rect
+          x={0}
+          y={0}
+          width={168}
+          height={120}
+          rx={12}
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+        />
+        <rect
+          x={14}
+          y={14}
+          width={140}
+          height={20}
+          rx={6}
+          fill={COLORS.navyTint}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+        />
+        <rect
+          x={14}
+          y={46}
+          width={62}
+          height={56}
+          rx={8}
+          fill={COLORS.indigoSoft}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+        />
+        <line
+          x1={88}
+          y1={56}
+          x2={148}
+          y2={56}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinecap="round"
+        />
+        <line
+          x1={88}
+          y1={74}
+          x2={138}
+          y2={74}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap="round"
+        />
+        <line
+          x1={88}
+          y1={92}
+          x2={146}
+          y2={92}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap="round"
+        />
+      </g>
+
+      <g transform="translate(1224, 120) rotate(2.5)">
+        <rect
+          x={0}
+          y={0}
+          width={168}
+          height={120}
+          rx={12}
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+        />
+        <rect
+          x={14}
+          y={14}
+          width={140}
+          height={20}
+          rx={6}
+          fill={COLORS.navyTint}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+        />
+        <rect
+          x={14}
+          y={46}
+          width={140}
+          height={28}
+          rx={8}
+          fill={COLORS.violetSoft}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+        />
+        <rect
+          x={14}
+          y={84}
+          width={40}
+          height={22}
+          rx={6}
+          fill={COLORS.navyTint}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+        />
+        <rect
+          x={64}
+          y={84}
+          width={40}
+          height={22}
+          rx={6}
+          fill={COLORS.navyTint}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+        />
+        <rect
+          x={114}
+          y={84}
+          width={40}
+          height={22}
+          rx={6}
+          fill={COLORS.navyTint}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+        />
+      </g>
+
+      {/* Magnifying glass doodle beside sample websites */}
+      <g transform="translate(1455, 185) rotate(-15)">
+        <circle
+          cx={0}
+          cy={0}
+          r={28}
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+        />
+        <circle cx={0} cy={0} r={19} fill={COLORS.navyTint} />
+        <path
+          d="M 20 20 L 44 44"
+          stroke={COLORS.navy}
+          strokeWidth={7}
+          strokeLinecap="round"
+        />
+      </g>
+
+      {/* Top-right: Draft copy sheet represented by abstract strokes (zero text) */}
+      <g transform="translate(1612, 134) rotate(2)">
+        <rect
+          x={0}
+          y={0}
+          width={220}
+          height={286}
+          rx={14}
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+        />
+        {/* Abstract heading stroke */}
+        <rect
+          x={26}
+          y={28}
+          width={118}
+          height={16}
+          rx={8}
+          fill={COLORS.indigo}
+        />
+        {/* Abstract wavy/straight copy strokes */}
+        {[68, 92, 116, 152, 176, 200, 232, 254].map((ly, idx) => (
+          <path
+            key={ly}
+            d={`M 26 ${ly} C 68 ${ly - 4}, 122 ${ly + 4}, ${
+              idx % 3 === 2 ? 136 : 188
+            } ${ly}`}
+            fill="none"
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+            strokeLinecap="round"
+          />
+        ))}
+      </g>
+
+      {/* Center: Branching Sitemap Diagram */}
+      {/* Top parent node */}
+      <rect
+        x={1345}
+        y={322}
+        width={140}
+        height={56}
+        rx={12}
+        fill={COLORS.indigo}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+      />
+      <line
+        x1={1374}
+        y1={350}
+        x2={1456}
+        y2={350}
+        stroke={COLORS.paper}
+        strokeWidth={STROKE.detail}
+        strokeLinecap="round"
+      />
+
+      {/* Sitemap branching connector lines */}
+      <path
+        d="M 1415 378 L 1415 416 M 1126 416 L 1696 416 M 1126 416 L 1126 492 M 1415 416 L 1415 465 M 1696 416 L 1696 492"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Left child page node */}
+      <g transform="translate(1030, 492)">
+        <rect
+          x={0}
+          y={0}
+          width={192}
+          height={128}
+          rx={14}
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+        />
+        <rect
+          x={18}
+          y={18}
+          width={86}
+          height={14}
+          rx={7}
+          fill={COLORS.indigoSoft}
+        />
+        <line
+          x1={18}
+          y1={54}
+          x2={166}
+          y2={54}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinecap="round"
+        />
+        <line
+          x1={18}
+          y1={76}
+          x2={142}
+          y2={76}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap="round"
+        />
+        <line
+          x1={18}
+          y1={96}
+          x2={120}
+          y2={96}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap="round"
+        />
+      </g>
+
+      {/* Right child page node */}
+      <g transform="translate(1600, 492)">
+        <rect
+          x={0}
+          y={0}
+          width={192}
+          height={128}
+          rx={14}
+          fill={COLORS.paper}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+        />
+        <rect
+          x={18}
+          y={18}
+          width={86}
+          height={14}
+          rx={7}
+          fill={COLORS.indigoSoft}
+        />
+        <rect
+          x={18}
+          y={48}
+          width={72}
+          height={56}
+          rx={8}
+          fill={COLORS.navyTint}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+        />
+        <line
+          x1={104}
+          y1={62}
+          x2={168}
+          y2={62}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeLinecap="round"
+        />
+        <line
+          x1={104}
+          y1={84}
+          x2={156}
+          y2={84}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+          strokeLinecap="round"
+        />
+      </g>
+
+      {/* Target dashed slot at exact MATCH_CARD coordinates */}
+      <rect
+        x={MATCH_CARD.x}
+        y={MATCH_CARD.y}
+        width={MATCH_CARD.width}
+        height={MATCH_CARD.height}
+        rx={16}
+        fill={COLORS.navyTint}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeDasharray="10 8"
+      />
+
+      {/* Violet page card sliding into exact MATCH_CARD position */}
+      <g transform={`translate(${MATCH_CARD.x}, ${MATCH_CARD.y + cardOffsetY})`}>
+        <rect
+          x={0}
+          y={0}
+          width={MATCH_CARD.width}
+          height={MATCH_CARD.height}
+          rx={16}
+          fill={COLORS.violet}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+        />
+        {/* Clean internal card layout strokes */}
+        <rect
+          x={22}
+          y={20}
+          width={206}
+          height={22}
+          rx={11}
+          fill={COLORS.paper}
+        />
+        <rect
+          x={22}
+          y={56}
+          width={118}
+          height={94}
+          rx={10}
+          fill={COLORS.violetSoft}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.fine}
+        />
+        <line
+          x1={156}
+          y1={74}
+          x2={224}
+          y2={74}
+          stroke={COLORS.paper}
+          strokeWidth={STROKE.main}
+          strokeLinecap="round"
+        />
+        <line
+          x1={156}
+          y1={98}
+          x2={212}
+          y2={98}
+          stroke={COLORS.paper}
+          strokeWidth={STROKE.detail}
+          strokeLinecap="round"
+        />
+        <rect
+          x={156}
+          y={118}
+          width={68}
+          height={24}
+          rx={12}
+          fill={COLORS.paper}
+        />
+
+        {/* Snap-in confirmation ticks when locked */}
+        {branchLock > 0.05 && (
+          <g opacity={branchLock}>
+            <path
+              d="M -16 -12 L -6 -6 M 266 -12 L 256 -6"
+              stroke={COLORS.violet}
+              strokeWidth={STROKE.detail}
+              strokeLinecap="round"
+            />
+          </g>
+        )}
+      </g>
+
+      {/* Teammate overhead hand & indigo sleeve entering from lower edge */}
+      <Teammate
+        view="overheadHand"
+        x={1435}
+        y={648 + cardOffsetY + withdrawOffsetY}
+        scale={1.15}
+      />
+    </svg>
+  );
+};
+14. src/scenes/Scene4DesignBuild.tsx
+Tsx
+import React from 'react';
+import {spring, useCurrentFrame, useVideoConfig} from 'remotion';
+import {CloudDoodle, GlobeDoodle} from '../components/DoodleProps';
+import {WebsiteLayout} from '../components/WebsiteLayout';
+import {
+  CLOSEUP_SCREEN,
+  COLORS,
+  MATCH_CARD,
+  SPRING_PRESETS,
+  STROKE,
+  clampedInterpolate,
+} from '../theme';
+
+/**
+ * Scene 4 (12–16s | Frames 360–479, local 0–119): Design, build, domain and hosting.
+ * - 12–13s (local 0–29): Overhead framing match cut! Wireframe at EXACT MATCH_CARD rect
+ *   with a mood board beside it.
+ * - 13–16s (local 30–119): Fixed close-up of teammate's laptop at CLOSEUP_SCREEN.
+ *   Colour fills wireframe -> finished website preview; globe & cloud appear beside it.
+ */
+export const Scene4DesignBuild: React.FC = () => {
+  const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
+
+  // Part A: 12-13s (local frames 0..29) — Overhead wireframe + mood board
+  if (frame < 30) {
+    const moodPop = spring({
+      frame,
+      fps,
+      config: SPRING_PRESETS.snappy,
+    });
+
+    return (
+      <svg
+        width={1920}
+        height={1080}
+        viewBox="0 0 1920 1080"
+        style={{display: 'block', backgroundColor: COLORS.bg}}
+      >
+        {/* Faint overhead desk context lines from Scene 3 */}
+        <path
+          d="M 1415 385 L 1415 465"
+          fill="none"
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.detail}
+          strokeDasharray="8 8"
+        />
+
+        {/* Mood board left panel beside wireframe */}
+        <g transform={`translate(1015, 385) scale(${0.92 + moodPop * 0.08})`}>
+          <rect
+            x={0}
+            y={0}
+            width={225}
+            height={275}
+            rx={16}
+            fill={COLORS.paper}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.main}
+          />
+          {/* Brand swatch circles: navy, indigo, violet */}
+          <circle
+            cx={52}
+            cy={54}
+            r={22}
+            fill={COLORS.navy}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+          />
+          <circle
+            cx={112}
+            cy={54}
+            r={22}
+            fill={COLORS.indigo}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+          />
+          <circle
+            cx={172}
+            cy={54}
+            r={22}
+            fill={COLORS.violet}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+          />
+
+          {/* Tactile mood swatches / visual pattern cards */}
+          <rect
+            x={26}
+            y={100}
+            width={172}
+            height={68}
+            rx={12}
+            fill={COLORS.violetSoft}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+          />
+          <path
+            d="M 42 146 C 68 118, 98 118, 122 142 C 142 122, 166 122, 182 146"
+            fill="none"
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+            strokeLinecap="round"
+          />
+          {/* Abstract pill & corner radius chips */}
+          <rect
+            x={26}
+            y={186}
+            width={102}
+            height={30}
+            rx={15}
+            fill={COLORS.violet}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+          />
+          <rect
+            x={140}
+            y={186}
+            width={58}
+            height={30}
+            rx={8}
+            fill={COLORS.indigoSoft}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+          />
+          <line
+            x1={28}
+            y1={238}
+            x2={176}
+            y2={238}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+            strokeLinecap="round"
+          />
+        </g>
+
+        {/* Exact Match Cut Wireframe in MATCH_CARD rect */}
+        <WebsiteLayout
+          x={MATCH_CARD.x}
+          y={MATCH_CARD.y}
+          width={MATCH_CARD.width}
+          height={MATCH_CARD.height}
+          fillProgress={0}
+        />
+
+        {/* Right-side secondary mood card & doodle stylus */}
+        <g transform="translate(1585, 420) rotate(3)">
+          <rect
+            x={0}
+            y={0}
+            width={195}
+            height={215}
+            rx={16}
+            fill={COLORS.paper}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.main}
+          />
+          <rect
+            x={22}
+            y={24}
+            width={150}
+            height={82}
+            rx={12}
+            fill={COLORS.indigoSoft}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+          />
+          <circle
+            cx={64}
+            cy={65}
+            r={20}
+            fill={COLORS.indigo}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.fine}
+          />
+          <rect
+            x={22}
+            y={124}
+            width={68}
+            height={64}
+            rx={10}
+            fill={COLORS.navyTint}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+          />
+          <rect
+            x={104}
+            y={124}
+            width={68}
+            height={64}
+            rx={10}
+            fill={COLORS.violetSoft}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.detail}
+          />
+        </g>
+
+        {/* Doodle pencil beside mood board */}
+        <g transform="translate(1795, 695) rotate(-32)">
+          <rect
+            x={-10}
+            y={-75}
+            width={20}
+            height={120}
+            rx={4}
+            fill={COLORS.indigo}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.main}
+          />
+          <path
+            d="M -10 -75 L 0 -104 L 10 -75 Z"
+            fill={COLORS.paper}
+            stroke={COLORS.navy}
+            strokeWidth={STROKE.main}
+            strokeLinejoin="round"
+          />
+        </g>
+
+        {/* Indigo cuff corner anchoring teammate presence at lower edge */}
+        <path
+          d="M 1358 1080 L 1384 995 C 1412 982, 1474 982, 1498 996 L 1528 1080 Z"
+          fill={COLORS.indigo}
+          stroke={COLORS.navy}
+          strokeWidth={STROKE.main}
+        />
+      </svg>
+    );
+  }
+
+  // Part B: 13-16s (local frames 30..119) — Close-up of teammate's laptop
+  const fillProgress = clampedInterpolate(frame, [38, 84], [0, 1]);
+
+  const globeScale =
+    frame < 74
+      ? 0
+      : spring({
+          frame: frame - 74,
+          fps,
+          config: SPRING_PRESETS.bouncy,
+        });
+
+  const cloudScale =
+    frame < 88
+      ? 0
+      : spring({
+          frame: frame - 88,
+          fps,
+          config: SPRING_PRESETS.bouncy,
+        });
+
+  const linkDraw = clampedInterpolate(frame, [80, 106], [0, 1]);
+
+  return (
+    <svg
+      width={1920}
+      height={1080}
+      viewBox="0 0 1920 1080"
+      style={{display: 'block', backgroundColor: COLORS.bg}}
+    >
+      {/* Teammate's laptop close-up frame (strictly right half: x >= 1005) */}
+      {/* Laptop bezel */}
+      <rect
+        x={CLOSEUP_SCREEN.x - 24}
+        y={CLOSEUP_SCREEN.y - 36}
+        width={CLOSEUP_SCREEN.width + 48}
+        height={CLOSEUP_SCREEN.height + 64}
+        rx={26}
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+      />
+      {/* Top webcam dot */}
+      <circle
+        cx={CLOSEUP_SCREEN.x + CLOSEUP_SCREEN.width / 2}
+        cy={CLOSEUP_SCREEN.y - 18}
+        r={5}
+        fill={COLORS.navy}
+      />
+      {/* Laptop lower deck / keyboard edge */}
+      <path
+        d={`M ${CLOSEUP_SCREEN.x - 32} ${
+          CLOSEUP_SCREEN.y + CLOSEUP_SCREEN.height + 28
+        } L ${CLOSEUP_SCREEN.x + CLOSEUP_SCREEN.width + 32} ${
+          CLOSEUP_SCREEN.y + CLOSEUP_SCREEN.height + 28
+        } L ${CLOSEUP_SCREEN.x + CLOSEUP_SCREEN.width + 58} ${
+          CLOSEUP_SCREEN.y + CLOSEUP_SCREEN.height + 86
+        } L ${CLOSEUP_SCREEN.x - 32} ${
+          CLOSEUP_SCREEN.y + CLOSEUP_SCREEN.height + 86
+        } Z`}
+        fill={COLORS.navyTint}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+      <rect
+        x={CLOSEUP_SCREEN.x + CLOSEUP_SCREEN.width / 2 - 76}
+        y={CLOSEUP_SCREEN.y + CLOSEUP_SCREEN.height + 44}
+        width={152}
+        height={24}
+        rx={8}
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+      />
+
+      {/* Same wireframe fills with colour into finished website preview */}
+      <WebsiteLayout
+        x={CLOSEUP_SCREEN.x}
+        y={CLOSEUP_SCREEN.y}
+        width={CLOSEUP_SCREEN.width}
+        height={CLOSEUP_SCREEN.height}
+        fillProgress={fillProgress}
+      />
+
+      {/* Dotted setup link from website to globe & cloud */}
+      <path
+        d="M 1742 365 C 1770 365, 1785 345, 1815 345 M 1815 385 L 1815 445"
+        fill="none"
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+        strokeDasharray="6 8"
+        strokeDashoffset={120 * (1 - linkDraw)}
+        opacity={linkDraw > 0.01 ? 1 : 0}
+      />
+
+      {/* Domain Globe & Hosting Cloud beside laptop */}
+      <GlobeDoodle x={1822} y={332} scale={globeScale * 0.95} />
+      <CloudDoodle x={1822} y={472} scale={cloudScale * 0.95} />
+
+      {/* Subtle indigo sleeve corner at bottom-right indicating teammate's laptop */}
+      <path
+        d="M 1595 1080 L 1645 920 C 1695 900, 1785 910, 1825 945 L 1885 1080 Z"
+        fill={COLORS.indigo}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+      />
+    </svg>
+  );
+};
+15. src/scenes/Scene5ReviewLaunch.tsx
+Tsx
+import React from 'react';
+import {spring, useCurrentFrame, useVideoConfig} from 'remotion';
+import {
+  LaunchSpark,
+  PhoneDoodle,
+  VioletCheckBadge,
+} from '../components/DoodleProps';
+import {WebsiteLayout} from '../components/WebsiteLayout';
+import {
+  CLOSEUP_SCREEN,
+  COLORS,
+  SPRING_PRESETS,
+  STROKE,
+  clampedInterpolate,
+} from '../theme';
+import {OwnerDeskScene} from './OwnerDeskScene';
+
+/**
+ * Scene 5 (16–20s | Frames 480–599, local 0–119): Two revision rounds and launch.
+ * - 16–19s (local 0–89): Fixed close-up of owner's laptop preserving exact CLOSEUP_SCREEN
+ *   page layout from Scene 4B (match cut!). Two violet checkmarks appear one at a time,
+ *   then site goes live with tiny multicoloured spark.
+ * - 19–20s (local 90–119): Cut back to original front-left medium shot from opening.
+ *   Owner smiles with finished website clearly visible; held through 20s.
+ */
+export const Scene5ReviewLaunch: React.FC = () => {
+  const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
+
+  // Part B: 19–20s (local frames 90..119) — Return to exact opening medium shot
+  if (frame >= 90) {
+    const localB = frame - 90;
+    const blink = localB >= 14 && localB <= 17;
+    const sparkTwinkle = 0.8 + Math.sin(localB * 0.25) * 0.15;
+
+    return (
+      <OwnerDeskScene
+        mode="launch"
+        expression="happy"
+        blink={blink}
+        headTilt={-2}
+        rightShoulderAngle={8}
+        rightElbowAngle={-8}
+        leftShoulderAngle={0}
+        holdingPhone={false}
+        phoneOnDesk={true}
+        phoneVibrating={false}
+        vibrationPhase={0}
+        tapRippleProgress={0}
+        paperPlaneProgress={0}
+        sparkProgress={sparkTwinkle}
+      />
+    );
+  }
+
+  // Part A: 16–19s (local frames 0..89) — Close-up of owner's laptop
+  // Check 1: pops at f 12, tick draws f 16-30
+  const check1Pop =
+    frame < 12
+      ? 0
+      : spring({
+          frame: frame - 12,
+          fps,
+          config: SPRING_PRESETS.bouncy,
+        });
+  const check1Tick = clampedInterpolate(frame, [16, 30], [0, 1]);
+
+  // Check 2: pops at f 38, tick draws f 42-56
+  const check2Pop =
+    frame < 38
+      ? 0
+      : spring({
+          frame: frame - 38,
+          fps,
+          config: SPRING_PRESETS.bouncy,
+        });
+  const check2Tick = clampedInterpolate(frame, [42, 56], [0, 1]);
+
+  // Launch spark & live indicator burst at f 62-84
+  const sparkProgress = clampedInterpolate(frame, [62, 82], [0, 1]);
+  const livePulseScale = clampedInterpolate(frame, [62, 86], [0, 1]);
+
+  return (
+    <svg
+      width={1920}
+      height={1080}
+      viewBox="0 0 1920 1080"
+      style={{display: 'block', backgroundColor: COLORS.bg}}
+    >
+      {/* Owner's desk edge & close-up laptop frame matching CLOSEUP_SCREEN exactly */}
+      <rect
+        x={CLOSEUP_SCREEN.x - 24}
+        y={CLOSEUP_SCREEN.y - 36}
+        width={CLOSEUP_SCREEN.width + 48}
+        height={CLOSEUP_SCREEN.height + 64}
+        rx={26}
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+      />
+      <circle
+        cx={CLOSEUP_SCREEN.x + CLOSEUP_SCREEN.width / 2}
+        cy={CLOSEUP_SCREEN.y - 18}
+        r={5}
+        fill={COLORS.navy}
+      />
+
+      {/* Laptop lower deck */}
+      <path
+        d={`M ${CLOSEUP_SCREEN.x - 32} ${
+          CLOSEUP_SCREEN.y + CLOSEUP_SCREEN.height + 28
+        } L ${CLOSEUP_SCREEN.x + CLOSEUP_SCREEN.width + 32} ${
+          CLOSEUP_SCREEN.y + CLOSEUP_SCREEN.height + 28
+        } L ${CLOSEUP_SCREEN.x + CLOSEUP_SCREEN.width + 58} ${
+          CLOSEUP_SCREEN.y + CLOSEUP_SCREEN.height + 86
+        } L ${CLOSEUP_SCREEN.x - 32} ${
+          CLOSEUP_SCREEN.y + CLOSEUP_SCREEN.height + 86
+        } Z`}
+        fill={COLORS.paper}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+        strokeLinejoin={STROKE.lineJoin}
+      />
+      <rect
+        x={CLOSEUP_SCREEN.x + CLOSEUP_SCREEN.width / 2 - 76}
+        y={CLOSEUP_SCREEN.y + CLOSEUP_SCREEN.height + 44}
+        width={152}
+        height={24}
+        rx={8}
+        fill={COLORS.navyTint}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.detail}
+      />
+
+      {/* Exact Match Cut Finished Website Layout */}
+      <WebsiteLayout
+        x={CLOSEUP_SCREEN.x}
+        y={CLOSEUP_SCREEN.y}
+        width={CLOSEUP_SCREEN.width}
+        height={CLOSEUP_SCREEN.height}
+        fillProgress={1}
+        showLivePulse={frame >= 62}
+        pulseScale={livePulseScale}
+      />
+
+      {/* Owner's phone resting beside laptop to anchor owner's desk */}
+      <PhoneDoodle x={1826} y={672} scale={1.15} vibrating={false} />
+
+      {/* Two violet revision checkmarks appearing sequentially */}
+      <VioletCheckBadge
+        x={1820}
+        y={325}
+        popScale={check1Pop}
+        tickProgress={check1Tick}
+      />
+      <VioletCheckBadge
+        x={1820}
+        y={425}
+        popScale={check2Pop}
+        tickProgress={check2Tick}
+      />
+
+      {/* Tiny multicoloured launch spark at top-right corner of website preview */}
+      <LaunchSpark x={1736} y={208} progress={sparkProgress} scale={1.05} />
+
+      {/* Subtle violet sweatshirt sleeve cuff at bottom-right anchoring owner's POV */}
+      <path
+        d="M 1595 1080 L 1645 920 C 1695 900, 1785 910, 1825 945 L 1885 1080 Z"
+        fill={COLORS.violet}
+        stroke={COLORS.navy}
+        strokeWidth={STROKE.main}
+      />
+    </svg>
+  );
+};
+16. src/TechStackExplainer.tsx
+Tsx
+import React from 'react';
+import {AbsoluteFill, Sequence} from 'remotion';
+import {Scene1Enquiry} from './scenes/Scene1Enquiry';
+import {Scene2Discovery} from './scenes/Scene2Discovery';
+import {Scene3ResearchSitemap} from './scenes/Scene3ResearchSitemap';
+import {Scene4DesignBuild} from './scenes/Scene4DesignBuild';
+import {Scene5ReviewLaunch} from './scenes/Scene5ReviewLaunch';
+import {COLORS} from './theme';
+
+export const TechStackExplainer: React.FC = () => {
+  return (
+    <AbsoluteFill style={{backgroundColor: COLORS.bg}}>
+      {/* 0–4s: Enquiry and first call */}
+      <Sequence from={0} durationInFrames={120}>
+        <Scene1Enquiry />
+      </Sequence>
+
+      {/* 4–8s: Teams discovery and service agreement */}
+      <Sequence from={120} durationInFrames={120}>
+        <Scene2Discovery />
+      </Sequence>
+
+      {/* 8–12s: Research, sitemap and copy */}
+      <Sequence from={240} durationInFrames={120}>
+        <Scene3ResearchSitemap />
+      </Sequence>
+
+      {/* 12–16s: Design, build, domain and hosting */}
+      <Sequence from={360} durationInFrames={120}>
+        <Scene4DesignBuild />
+      </Sequence>
+
+      {/* 16–20s: Two revision rounds and launch */}
+      <Sequence from={480} durationInFrames={120}>
+        <Scene5ReviewLaunch />
+      </Sequence>
+    </AbsoluteFill>
+  );
+};
