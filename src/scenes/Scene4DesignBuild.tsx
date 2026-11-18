@@ -61,11 +61,12 @@ export const Scene4DesignBuild: React.FC = () => {
   // Overlapping CRM Mobile App companion slides in smoothly (f 50..82)
   const mobileProgress = clampedInterpolate(frame, [50, 82], [0, 1], expOut);
 
-  // Gentle 3D camera pan & tilt across finished page, returning smoothly to 0 for Scene 5 cut
-  const panPhase = clampedInterpolate(frame, [68, 110], [0, Math.PI]);
+  // Gentle continuous 3D camera movement across build & pan, matching (-8, 4) at both scene cuts
+  const panPhase = clampedInterpolate(frame, [68, 112], [0, Math.PI]);
+  const buildArc = Math.sin(clampedInterpolate(frame, [0, 119], [0, Math.PI]));
   const panOffset = -Math.sin(panPhase) * 18;
-  const stageRotateY = -Math.sin(panPhase) * 4.5;
-  const stageRotateX = Math.sin(panPhase) * 2;
+  const stageRotateY = -8 - buildArc * 3 + Math.sin(panPhase) * 2.5;
+  const stageRotateX = 4 + buildArc * 1.5 - Math.sin(panPhase) * 1;
 
   // Domain Globe & Hosting Cloud badges settle beside preview
   const globePop =

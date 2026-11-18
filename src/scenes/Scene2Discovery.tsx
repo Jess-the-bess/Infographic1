@@ -17,21 +17,17 @@ import {
 
 /**
  * Scene 2 (4–8s | Frames 120–239, local 0–119): Discovery and agreement.
- * - Opens on PLANE_TARGET_BOX, expanding with exponential Zelios easing into a 3D-tilted
- *   Teams Discovery & Service Agreement workspace.
- * - Two layered dialogue/call cards (with animated Teams audio waveform) glide together,
- *   an animated cursor taps the agreement confirmation, and a CRM Mint sign-off pill lands.
- * - Final 0.5s (f 104..119): Camera dollies forward as the Blue block zooms full-frame.
+ * - Opens on PLANE_TARGET_BOX matching Scene 1's (-8, +4) 3D angle, smoothly increasing
+ *   depth tilt during discovery, then flattening cleanly as it zooms full-frame.
+ * - Features layered drop shadows on the Blue block, Teams bubbles, and Mint sign-off pill.
  */
 export const Scene2Discovery: React.FC = () => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
   const expOut = Easing.bezier(0.16, 1, 0.3, 1);
 
-  // f 0..26: Expand plane-transformed box -> DISCOVERY_BLOCK
   const blockExpand = clampedInterpolate(frame, [0, 26], [0, 1], expOut);
 
-  // f 104..119: Zoom into Blue block until it fills 1920x1080 frame
   const zoomFull = clampedInterpolate(
     frame,
     [104, 119],
@@ -39,9 +35,10 @@ export const Scene2Discovery: React.FC = () => {
     Easing.inOut(Easing.cubic)
   );
 
-  // Subtle 3D tilt during discovery that flattens cleanly before full-frame zoom
-  const stageRotateY = -4.5 * blockExpand * (1 - zoomFull);
-  const stageRotateX = 2.5 * blockExpand * (1 - zoomFull);
+  // Smooth continuous 3D depth angle: enters at (-8, 4) from Scene 1, drifts to (-11, 5.5), flattens to (0, 0) on full zoom
+  const midDrift = Math.sin(clampedInterpolate(frame, [0, 104], [0, Math.PI]));
+  const stageRotateY = (-8 - midDrift * 3) * (1 - zoomFull);
+  const stageRotateX = (4 + midDrift * 1.5) * (1 - zoomFull);
 
   const startX = PLANE_TARGET_BOX.cx - PLANE_TARGET_BOX.size / 2;
   const startY = PLANE_TARGET_BOX.cy - PLANE_TARGET_BOX.size / 2;
@@ -63,7 +60,6 @@ export const Scene2Discovery: React.FC = () => {
   const rectH = baseH + (1080 - baseH) * zoomFull;
   const rectRx = baseRx * (1 - zoomFull);
 
-  // f 24..58: Two speech/call cards glide together inside the block
   const bubbleSlide = clampedInterpolate(frame, [24, 56], [0, 1], expOut);
   const bubbleFadeOut = clampedInterpolate(
     frame,
@@ -76,7 +72,6 @@ export const Scene2Discovery: React.FC = () => {
   const leftBubbleOffset = (1 - bubbleSlide) * -86;
   const rightBubbleOffset = (1 - bubbleSlide) * 86;
 
-  // Animated cursor moves to click confirmation pill at f 62..68
   const cursorMove = clampedInterpolate(frame, [46, 62], [0, 1], expOut);
   const cursorX = 1610 + (1428 - 1610) * cursorMove;
   const cursorY = 675 + (634 - 675) * cursorMove;
@@ -88,13 +83,14 @@ export const Scene2Discovery: React.FC = () => {
   );
   const cursorScale =
     frame >= 62 && frame <= 67
-      ? 1 - clampedInterpolate(frame, [62, 65], [0, 0.16]) + clampedInterpolate(frame, [65, 68], [0, 0.16])
+      ? 1 -
+        clampedInterpolate(frame, [62, 65], [0, 0.16]) +
+        clampedInterpolate(frame, [65, 68], [0, 0.16])
       : 1;
   const cursorOpacity =
     clampedInterpolate(frame, [46, 52], [0, 1]) *
     (1 - clampedInterpolate(frame, [76, 88], [0, 1]));
 
-  // f 64..92: Confirmation Mint sign-off pill lands with spring bounce
   const tickPop =
     frame < 64
       ? 0
@@ -106,7 +102,6 @@ export const Scene2Discovery: React.FC = () => {
   const tickDraw = clampedInterpolate(frame, [68, 88], [0, 1], expOut);
   const tickLen = 48;
 
-  // Subtle live audio waveform bars on the Teams call bubble
   const waveHeights = [10, 20, 28, 16, 24, 12];
 
   return (
@@ -126,13 +121,22 @@ export const Scene2Discovery: React.FC = () => {
           style={{display: 'block'}}
         >
           <defs>
-            <filter id="discoveryGlow" x="-15%" y="-15%" width="130%" height="135%">
+            <filter id="discoveryGlow" x="-18%" y="-18%" width="136%" height="140%">
               <feDropShadow
                 dx="0"
                 dy="22"
                 stdDeviation="22"
                 floodColor="#39A6DE"
-                floodOpacity="0.22"
+                floodOpacity="0.24"
+              />
+            </filter>
+            <filter id="innerCardShadow" x="-20%" y="-20%" width="140%" height="150%">
+              <feDropShadow
+                dx="0"
+                dy="10"
+                stdDeviation="10"
+                floodColor="#0F172A"
+                floodOpacity="0.16"
               />
             </filter>
             <linearGradient id="blueBlockGrad" x1="0" y1="0" x2="1" y2="1">
@@ -141,7 +145,6 @@ export const Scene2Discovery: React.FC = () => {
             </linearGradient>
           </defs>
 
-          {/* Blue Discovery Block */}
           <g filter={zoomFull < 0.9 ? 'url(#discoveryGlow)' : undefined}>
             <rect
               x={rectX}
@@ -153,7 +156,6 @@ export const Scene2Discovery: React.FC = () => {
             />
           </g>
 
-          {/* Subtle frosted inner frame while bounded */}
           {zoomFull < 0.85 && blockExpand > 0.4 && (
             <rect
               x={rectX + 14}
@@ -168,10 +170,8 @@ export const Scene2Discovery: React.FC = () => {
             />
           )}
 
-          {/* Teams Call + Dialogue Cards sliding together inside the Blue block */}
           {bubbleOpacity > 0.01 && (
-            <g opacity={bubbleOpacity}>
-              {/* Left crisp white Teams call bubble with animated audio waveform */}
+            <g opacity={bubbleOpacity} filter="url(#innerCardShadow)">
               <g transform={`translate(${1295 + leftBubbleOffset}, 436)`}>
                 <rect
                   x={-118}
@@ -185,12 +185,10 @@ export const Scene2Discovery: React.FC = () => {
                 />
                 <path d="M -82 56 L -98 78 L -52 56 Z" fill={COLORS.card} />
 
-                {/* Caller avatar + live badge dot */}
                 <circle cx={-76} cy={-16} r={16} fill={COLORS.blueSoft} />
                 <circle cx={-76} cy={-16} r={7} fill={COLORS.blue} />
                 <circle cx={-63} cy={-4} r={4.5} fill={COLORS.mint} stroke={COLORS.card} strokeWidth={2} />
 
-                {/* Animated audio waveform */}
                 {waveHeights.map((baseH, idx) => {
                   const h =
                     baseH *
@@ -219,7 +217,6 @@ export const Scene2Discovery: React.FC = () => {
                 />
               </g>
 
-              {/* Right frosted white-blue agreement card bubble */}
               <g transform={`translate(${1520 + rightBubbleOffset}, 526)`}>
                 <rect
                   x={-114}
@@ -262,11 +259,11 @@ export const Scene2Discovery: React.FC = () => {
             </g>
           )}
 
-          {/* CRM-style Mint Sign-Off Pill */}
           {tickPop > 0.01 && bubbleFadeOut > 0.01 && (
             <g
               transform={`translate(1410, 624) scale(${tickPop})`}
               opacity={bubbleFadeOut}
+              filter="url(#innerCardShadow)"
             >
               <rect
                 x={-92}
@@ -311,7 +308,6 @@ export const Scene2Discovery: React.FC = () => {
         />
       </CameraStage>
 
-      {/* Anchored Editable Typography Layer */}
       <SceneTextLayer
         headline={SCENE_COPY.scene2.headline}
         subhead={SCENE_COPY.scene2.subhead}

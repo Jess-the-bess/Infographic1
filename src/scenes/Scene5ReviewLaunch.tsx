@@ -64,8 +64,10 @@ export const Scene5ReviewLaunch: React.FC = () => {
   const siteH =
     PREVIEW_RECT.height + (finalRect.height - PREVIEW_RECT.height) * pullBack;
 
-  // Gentle 3D showcase angle that settles cleanly on launch
-  const stageRotateY = -3.5 * Math.sin(pullBack * Math.PI);
+  // Continuous subtle 3D showcase angle: enters at (-8, 4) from Scene 4, gently breathes, settles at (-6.5, 3.5)
+  const settleArc = Math.sin(pullBack * Math.PI);
+  const stageRotateY = -8 + pullBack * 1.5 - settleArc * 2;
+  const stageRotateX = 4 - pullBack * 0.5 + settleArc * 1;
 
   // f 90 (19s): Reveal "Live" beside it with one small multicoloured spark
   const livePop =
@@ -85,7 +87,7 @@ export const Scene5ReviewLaunch: React.FC = () => {
     <AbsoluteFill style={{backgroundColor: COLORS.bg}}>
       <AmbientBackdrop cx={1330} cy={490} opacity={0.95} />
 
-      <CameraStage rotateY={stageRotateY} origin="1330px 490px">
+      <CameraStage rotateX={stageRotateX} rotateY={stageRotateY} origin="1330px 490px">
         <svg
           width={1920}
           height={1080}

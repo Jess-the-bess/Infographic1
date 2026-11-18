@@ -66,9 +66,10 @@ export const Scene3ResearchSitemap: React.FC = () => {
   );
   const othersFade = 1 - clampedInterpolate(frame, [102, 110], [0, 1]);
 
-  // Subtle 3D architectural tilt during planning that levels flat for Scene 4
-  const stageRotateX = 3.5 * pullBack * (1 - expandT);
-  const stageRotateY = -4.5 * pullBack * (1 - expandT);
+  // Subtle, smooth 3D architectural angle: enters flat from Scene 2 full-frame, peaks at (-11, 5.5), settles at (-8, 4) for Scene 4
+  const midArc = Math.sin(clampedInterpolate(frame, [24, 104], [0, Math.PI]));
+  const stageRotateX = pullBack * (4 + midArc * 1.8);
+  const stageRotateY = pullBack * (-8 - midArc * 3.2);
 
   const centerBase = {x: 1300, y: 365, width: 220, height: 134, rx: 16};
   const expX = centerBase.x + (PREVIEW_RECT.x - centerBase.x) * expandT;
@@ -96,13 +97,29 @@ export const Scene3ResearchSitemap: React.FC = () => {
           style={{display: 'block'}}
         >
           <defs>
-            <filter id="sitemapCardGlow" x="-16%" y="-16%" width="132%" height="136%">
+            <filter id="sitemapCardGlow" x="-20%" y="-20%" width="140%" height="148%">
               <feDropShadow
                 dx="0"
-                dy="14"
-                stdDeviation="14"
+                dy="16"
+                stdDeviation="15"
                 floodColor="#39A6DE"
-                floodOpacity="0.12"
+                floodOpacity="0.16"
+              />
+              <feDropShadow
+                dx="0"
+                dy="4"
+                stdDeviation="5"
+                floodColor="#0F172A"
+                floodOpacity="0.06"
+              />
+            </filter>
+            <filter id="connectorShadow" x="-15%" y="-15%" width="130%" height="140%">
+              <feDropShadow
+                dx="0"
+                dy="6"
+                stdDeviation="4"
+                floodColor="#39A6DE"
+                floodOpacity="0.22"
               />
             </filter>
             <linearGradient id="rootCardGrad" x1="0" y1="0" x2="1" y2="1">
@@ -113,7 +130,7 @@ export const Scene3ResearchSitemap: React.FC = () => {
 
           {/* Sitemap connector lines */}
           {frame >= 22 && othersFade > 0.01 && (
-            <g opacity={othersFade}>
+            <g opacity={othersFade} filter="url(#connectorShadow)">
               <path
                 d="M 1410 287 L 1410 326 M 1140 326 L 1680 326 M 1140 326 L 1140 365 M 1410 326 L 1410 365 M 1680 326 L 1680 365 M 1140 499 L 1140 555 M 1410 499 L 1410 555 M 1680 499 L 1680 555"
                 fill="none"
